@@ -4,11 +4,10 @@ import java.util.Random;
 public class GeneticAlgorithmTester {
     public static int NUMBER_OF_FACILITIES = 2;
     public static int FACILITY_DIMENSION = 12;
-    public static int NUMBER_OF_PEOPLE = 12;
+    public static int NUMBER_OF_PEOPLE = 4;
 
 
     public static void main(String[] args) {
-        String[][] floorPlan = new String[FACILITY_DIMENSION][FACILITY_DIMENSION];
         Person[] listOfPeople = createPersonList(NUMBER_OF_PEOPLE);
 
         // TODO: Create Facilities by using NUMBER_OF_FACILITIES and a loop
@@ -21,8 +20,8 @@ public class GeneticAlgorithmTester {
 //        }
 
         // TODO: Remove this implementation once completed
-        Facility facility = new Facility(floorPlan, listOfPeople);
-        Facility facility1 = new Facility(floorPlan, listOfPeople);
+        Facility facility = new Facility(FACILITY_DIMENSION, listOfPeople);
+        Facility facility1 = new Facility(FACILITY_DIMENSION, listOfPeople);
         ArrayList<Facility> listOfFacilities = new ArrayList<>();
         listOfFacilities.add(facility);
         listOfFacilities.add(facility1);
