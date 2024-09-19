@@ -6,8 +6,10 @@
 public class Person {
     int function;
     int affinity;
-    public Person(int function) {
+    final int id;
+    public Person(int function, int id) {
         this.function = function;
+        this.id = id;
     }
 
     public int getFunction() {

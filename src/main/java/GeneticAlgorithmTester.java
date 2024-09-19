@@ -1,5 +1,5 @@
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class GeneticAlgorithmTester {
     public static int NUMBER_OF_FACILITIES = 2;
@@ -40,9 +40,8 @@ public class GeneticAlgorithmTester {
     static Person[] createPersonList(int numberOfPeople) {
         Person[] people = new Person[numberOfPeople];
         for (int i = 0; i < numberOfPeople; i++) {
-            Random r = new Random();
-            int randomInt = r.nextInt(0, 5);
-            people[i] = new Person(randomInt);
+            int randomInt = ThreadLocalRandom.current().nextInt( 5);
+            people[i] = new Person(randomInt, i);
         }
         return people;
     }

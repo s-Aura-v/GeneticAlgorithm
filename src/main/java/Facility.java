@@ -1,4 +1,6 @@
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -11,6 +13,8 @@ public class Facility extends Thread {
     private Person[][] floorPlan;
     private Person[] listOfPeople;
     private ArrayList<Person[][]> solutionSet;
+
+    //    private HashMap<Integer, Person[][]> solutionSet;
     int[] affinityKeys;
 
 
@@ -50,80 +54,88 @@ public class Facility extends Thread {
 
     /**
      * Synchronized are locks used for atomicity. It locks the method then unlocks it at the end.
-     * xValue: the x-axis in the floor plan
-     * yValue: the y-axis in the floor plan
+     *
      * @param index: the index for the Person stored in the Person array
      * @return void: adds a person to the floor plan
+     * xValue: the x-axis in the floor plan
+     * yValue: the y-axis in the floor plan
      */
+
     private synchronized void addToFloorPlan(int index) {
         int xValue = ThreadLocalRandom.current().nextInt(FACILITY_DIMENSION);
         int yValue = ThreadLocalRandom.current().nextInt(FACILITY_DIMENSION);
-        if (floorPlan[xValue][yValue] != null) {
-            floorPlan[xValue][yValue] = listOfPeople[index];
+        Person person = listOfPeople[index];
+        int personVolume = listOfPeople[index].function;
+        if (floorPlan[xValue][yValue] == null) {
+            boolean added = false;
+            if (personVolume == 0) {
+                floorPlan[xValue][yValue] = listOfPeople[index];
+            } else if (personVolume == 1) {
+                try {
+                    if (floorPlan[xValue - 1][yValue] == null) {
+                        floorPlan[xValue][yValue] = person;
+                        floorPlan[xValue - 1][yValue] = person;
+                        added = true;
+                    }
+                    if ((!added) && floorPlan[xValue + 1][yValue] == null) {
+                        floorPlan[xValue][yValue] = person;
+                        floorPlan[xValue + 1][yValue] = person;
+                        added = true;
+                    }
+                    if (!added) addToFloorPlan(index);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    addToFloorPlan(index);
+                }
+
+            } else if (personVolume == 2) {
+                try {
+                    if (floorPlan[xValue][yValue - 1] == null) {
+                        floorPlan[xValue][yValue] = person;
+                        floorPlan[xValue][yValue - 1] = person;
+                        added = true;
+                    }
+                    if ((!added) && floorPlan[xValue][yValue + 1] == null) {
+                        floorPlan[xValue][yValue] = person;
+                        floorPlan[xValue][yValue + 1] = person;
+                        added = true;
+                    }
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    addToFloorPlan(index);
+                }
+                if (!added) addToFloorPlan(index);
+            } else if (personVolume == 3) {
+                try {
+                    if (floorPlan[xValue + 1][yValue] == null && floorPlan[xValue - 1][yValue] == null &&
+                            floorPlan[xValue][yValue - 1] == null && floorPlan[xValue][yValue + 1] == null &&
+                            floorPlan[xValue - 1][yValue + 1] == null && floorPlan[xValue - 1][yValue - 1] == null &&
+                            floorPlan[xValue + 1][yValue + 1] == null && floorPlan[xValue + 1][yValue - 1] == null) {
+                        floorPlan[xValue][yValue] = person;
+                        floorPlan[xValue + 1][yValue] = person;
+                        floorPlan[xValue - 1][yValue] = person;
+                        floorPlan[xValue][yValue + 1] = person;
+                        floorPlan[xValue][yValue - 1] = person;
+                        floorPlan[xValue + 1][yValue + 1] = person;
+                        floorPlan[xValue + 1][yValue - 1] = person;
+                        floorPlan[xValue - 1][yValue + 1] = person;
+                        floorPlan[xValue - 1][yValue - 1] = person;
+                        added = true;
+                    }
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    addToFloorPlan(index);
+                }
+                if (!added) addToFloorPlan(index);
+            }
         } else {
             addToFloorPlan(index);
         }
     }
-
-    /**
-     //TODO: Saved for later. Complete program first to see if it works, then add complicated ideas.
-     */
-//    private synchronized void addToFloorPlan(int index) {
-//        int xValue = ThreadLocalRandom.current().nextInt(FACILITY_DIMENSION);
-//        int yValue = ThreadLocalRandom.current().nextInt(FACILITY_DIMENSION);
-//        Person person = listOfPeople[index];
-//        int personVolume = listOfPeople[index].function;
-//        if (floorPlan[xValue][yValue] == null) {
-//            if (personVolume == 0) {
-//                floorPlan[xValue][yValue] = listOfPeople[index];
-//            } else if (personVolume == 1) {
-//                boolean added = false;
-//                if (floorPlan[xValue - 1][yValue] != null) {
-//                    floorPlan[xValue][yValue] = person;
-//                    floorPlan[xValue - 1][yValue] = person;
-//                    added = true;
-//                }
-//                if (floorPlan[xValue + 1][yValue] != null && (!added)) {
-//                    floorPlan[xValue][yValue] = person;
-//                    floorPlan[xValue + 1][yValue] = person;
-//                }
-//            } else if (personVolume == 2) {
-//                boolean added = false;
-//                if (floorPlan[xValue][yValue - 1] != null) {
-//                    floorPlan[xValue][yValue] = person;
-//                    floorPlan[xValue][yValue - 1] = person;
-//                    added = true;
-//                }
-//                if (floorPlan[xValue][yValue + 1] != null && (!added)) {
-//                    floorPlan[xValue][yValue] = person;
-//                    floorPlan[xValue][yValue + 1] = person;
-//                }
-//            } else if (personVolume == 3) {
-//                if (floorPlan[xValue + 1][yValue] != null && floorPlan[xValue - 1][yValue] != null &&
-//                        floorPlan[xValue][yValue - 1] != null && floorPlan[xValue][yValue + 1] != null &&
-//                        floorPlan[xValue - 1][yValue + 1] != null && floorPlan[xValue - 1][yValue - 1] != null &&
-//                        floorPlan[xValue + 1][yValue + 1] != null && floorPlan[xValue + 1][yValue - 1] != null) {
-//                    floorPlan[xValue][yValue] = person;
-//                    floorPlan[xValue + 1][yValue] = person;
-//                    floorPlan[xValue - 1][yValue] = person;
-//                    floorPlan[xValue][yValue + 1] = person;
-//                    floorPlan[xValue][yValue - 1] = person;
-//                    floorPlan[xValue + 1][yValue + 1] = person;
-//                    floorPlan[xValue + 1][yValue - 1] = person;
-//                    floorPlan[xValue - 1][yValue + 1] = person;
-//                    floorPlan[xValue - 1][yValue - 1] = person;
-//                }
-//            }
-//        } else {
-//            addToFloorPlan(index);
-//        }
-//    }
 
     private void addToSolutionSet() {
 
     }
 
     //TODO: Saved for later. Complete DEMO first to see if it works.
+
     /**
      * Functions are defined as 0,1,2,3,4 representing "Doctor", "Assistant", "Student", "Patient", and "Dean Of Medicine."
      * [x] -> [y] implies x likes y
@@ -146,7 +158,6 @@ public class Facility extends Thread {
 //        }
 //    }
 
-
     /*
     Demo where we only look around us.
      */
@@ -157,12 +168,12 @@ public class Facility extends Thread {
         3. Add it all together
          */
         for (int i = 0; i < FACILITY_DIMENSION; i++) {
-            for (int j = 0; j < FACILITY_DIMENSION; j++ ) {
+            for (int j = 0; j < FACILITY_DIMENSION; j++) {
                 if (floorPlan[i][j] == null) continue;
                 int affinity = 0;
                 try {
 
-                } catch (ArrayIndexOutOfBoundsException e){
+                } catch (ArrayIndexOutOfBoundsException e) {
 
                 }
             }
