@@ -5,9 +5,12 @@
  */
 public class Person {
     int function;
+    int affinity;
     public Person(int function) {
         this.function = function;
     }
-    
 
+    public int getFunction() {
+        return function;
+    }
 }
