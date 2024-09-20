@@ -1,6 +1,7 @@
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -64,15 +65,15 @@ public class Facility extends Thread {
      */
 
     private synchronized void addToFloorPlan(int index) {
-        int xValue = ThreadLocalRandom.current().nextInt(FACILITY_DIMENSION);
-        int yValue = ThreadLocalRandom.current().nextInt(FACILITY_DIMENSION);
+        int xValue = ThreadLocalRandom.current().nextInt(1, FACILITY_DIMENSION - 1);
+        int yValue = ThreadLocalRandom.current().nextInt(1, FACILITY_DIMENSION - 1);
         Person person = listOfPeople[index];
-        int personVolume = listOfPeople[index].function;
+        int function = listOfPeople[index].function;
         if (floorPlan[xValue][yValue] == null) {
             boolean added = false;
-            if (personVolume == 0) {
+            if (function == 0) {
                 floorPlan[xValue][yValue] = listOfPeople[index];
-            } else if (personVolume == 1) {
+            } else if (function == 1) {
                 try {
                     if (floorPlan[xValue - 1][yValue] == null) {
                         floorPlan[xValue][yValue] = person;
@@ -88,8 +89,7 @@ public class Facility extends Thread {
                 } catch (ArrayIndexOutOfBoundsException e) {
                     addToFloorPlan(index);
                 }
-
-            } else if (personVolume == 2) {
+            } else if (function == 2) {
                 try {
                     if (floorPlan[xValue][yValue - 1] == null) {
                         floorPlan[xValue][yValue] = person;
@@ -105,7 +105,7 @@ public class Facility extends Thread {
                     addToFloorPlan(index);
                 }
                 if (!added) addToFloorPlan(index);
-            } else if (personVolume == 3) {
+            } else if (function == 3) {
                 try {
                     if (floorPlan[xValue + 1][yValue] == null && floorPlan[xValue - 1][yValue] == null &&
                             floorPlan[xValue][yValue - 1] == null && floorPlan[xValue][yValue + 1] == null &&
@@ -145,71 +145,124 @@ public class Facility extends Thread {
      * 2 takes a space of 2x1; Likes 1.
      * 3 takes a space of 3x3; Likes 0.
      * Affinity starts at 0 and can only go up depending on proximity.
-     * [x] -> [y] implies x likes y
-     * [x] -/> [y] implies x does not like y
      * There is a max radius of [z]. The closer to z, the less value the likability has.
      * Affinity = distance * likeability
      * Find where every person is located and calculate the affinity for each one.
      */
-    private void calculateAffinity(Person[][] floorPlan) {
+    //@formatter:off
+    private synchronized void calculateAffinity(Person[][] floorPlan) {
         /*
         1. Figure out where everyone is located
         2. Calculate each individual's affinity
         3. Add it all together
+
+        The arrays have a border so it's safe to visit every cell.
+        Now, I need to get the proper affininty
+        Figure out how many people are around it, then determine how good it is
          */
         int affinity = 0;
-        ArrayList<Integer> neighbors = new ArrayList<>();
-        for (int i = 0; i < FACILITY_DIMENSION; i++) {
-            for (int j = 0; j < FACILITY_DIMENSION; j++) {
-                if (floorPlan[i][j] == null) continue;
-                boolean completed = false;
-                try {
-                    if (i == 0) {
-                        // can't subtract X
-                    }
-                    if (j == 0) {
-                        // can't subtract Y
-                    }
-                    if (i == 11) {
-                        // can't add X
-                    }
-                    if (j == 11) {
-                        // can't add Y
-                    }
-                    if ((!completed) && i != 0 && j != 0 && i != 11 && j != 11) {
-                        // then you can add or subtract at all times
-                        if (floorPlan[i + 1][j] != null) {
-                            neighbors.add(floorPlan[i + 1][j].function);
-                        }
-                        if (floorPlan[i - 1][j] != null) {
-                            neighbors.add(floorPlan[i - 1][j].function);
-                        }
-                        if (floorPlan[i][j - 1] != null) {
-                            neighbors.add(floorPlan[i][j - 1].function);
-                        }
-                        if (floorPlan[i][j + 1] != null) {
-                            neighbors.add(floorPlan[i][j + 1].function);
-                        }
-                        if (floorPlan[i - 1][j + 1] != null) {
-                            neighbors.add(floorPlan[i - 1][j + 1].function);
-                        }
-                        if (floorPlan[i - 1][j - 1] != null) {
-                            neighbors.add(floorPlan[i - 1][j - 1].function);
-                        }
-                        if (floorPlan[i + 1][j + 1] != null) {
-                            neighbors.add(floorPlan[i + 1][j + 1].function);
-                        }
-                        if (floorPlan[i + 1][j - 1] != null) {
-                            neighbors.add(floorPlan[i + 1][j - 1].function);
-                        }
-                    }
-                    lookAround(floorPlan, i, j);
-                } catch (ArrayIndexOutOfBoundsException e) {
+        int zeroCount = 0;
+        int oneCount = 0;
+        int twoCount = 0;
+        int threeCount = 0;
+        HashSet<Integer> completedIDs = new HashSet<Integer>();
 
+        for (int i = 1; i < FACILITY_DIMENSION - 1; i++) {
+            for (int j = 1; j < FACILITY_DIMENSION - 1; j++) {
+                if (floorPlan[i][j] == null) continue;
+                try {
+                    switch (floorPlan[i + 1][j].function) {
+                        case 0: zeroCount++; break;
+                        case 1: oneCount++; break;
+                        case 2: twoCount++; break;
+                        case 3: threeCount++; break;
+                    }
+                } catch (NullPointerException e) {
                 }
+                try {
+                    switch (floorPlan[i - 1][j].function) {
+                        case 0: zeroCount++; break;
+                        case 1: oneCount++; break;
+                        case 2: twoCount++; break;
+                        case 3: threeCount++; break;
+                    }
+                } catch (NullPointerException e) {
+                }
+                try {
+                    switch (floorPlan[i][j + 1].function) {
+                        case 0: zeroCount++; break;
+                        case 1: oneCount++; break;
+                        case 2: twoCount++; break;
+                        case 3: threeCount++; break;
+                    }
+                } catch (NullPointerException e) {
+                }
+                try {
+                    switch (floorPlan[i][j - 1].function) {
+                        case 0: zeroCount++; break;
+                        case 1: oneCount++; break;
+                        case 2: twoCount++; break;
+                        case 3: threeCount++; break;
+                    }
+                } catch (NullPointerException e) {
+                }
+                try {
+                    switch (floorPlan[i - 1][j + 1].function) {
+                        case 0: zeroCount++; break;
+                        case 1: oneCount++; break;
+                        case 2: twoCount++; break;
+                        case 3: threeCount++; break;
+                    }
+                } catch (NullPointerException e) {
+                }
+                try {
+                    switch (floorPlan[i - 1][j - 1].function) {
+                        case 0: zeroCount++; break;
+                        case 1: oneCount++; break;
+                        case 2: twoCount++; break;
+                        case 3: threeCount++; break;
+                    }
+                } catch (NullPointerException e) {
+                }
+                try {
+                    switch (floorPlan[i + 1][j + 1].function) {
+                        case 0: zeroCount++; break;
+                        case 1: oneCount++; break;
+                        case 2: twoCount++; break;
+                        case 3: threeCount++; break;
+                    }
+                } catch (NullPointerException e) {
+                }
+                try {
+                    switch (floorPlan[i + 1][j - 1].function) {
+                        case 0: zeroCount++; break;
+                        case 1: oneCount++; break;
+                        case 2: twoCount++; break;
+                        case 3: threeCount++; break;
+                    }
+                } catch (NullPointerException e) {
+                }
+
+                Person person = floorPlan[i][j];
+                completedIDs.add(person.id);
+
+                if ((!completedIDs.contains(person.id)) && person.function == 0) {
+                    affinity += threeCount;
+                }
+                if ((!completedIDs.contains(person.id)) && person.function == 1) {
+                    affinity += twoCount;
+                }
+                if ((!completedIDs.contains(person.id)) && person.function == 2) {
+                    affinity += oneCount;
+                }
+                if ((!completedIDs.contains(person.id)) && person.function == 3) {
+                    affinity += zeroCount;
+                }
+                System.out.println(affinity);
             }
         }
     }
+    //@formatter:on
 
     /**
      * Helper method for calculateAffinity
