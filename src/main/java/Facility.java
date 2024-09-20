@@ -1,6 +1,7 @@
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.Exchanger;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -13,6 +14,7 @@ public class Facility extends Thread {
     private Person[][] floorPlan;
     private Person[] listOfPeople;
     private ArrayList<Person[][]> solutionSet;
+//    private final Exchanger< String > exchanger;
 
     //    private HashMap<Integer, Person[][]> solutionSet;
     int[] affinityKeys;
@@ -137,29 +139,17 @@ public class Facility extends Thread {
     //TODO: Saved for later. Complete DEMO first to see if it works.
 
     /**
-     * Functions are defined as 0,1,2,3,4 representing "Doctor", "Assistant", "Student", "Patient", and "Dean Of Medicine."
+     * Functions are defined as 0,1,2,3.
+     * 0 takes a space of 1x1. Likes 3.
+     * 1 takes a space of 1x2. Likes 2.
+     * 2 takes a space of 2x1; Likes 1.
+     * 3 takes a space of 3x3; Likes 0.
+     * Affinity starts at 0 and can only go up depending on proximity.
      * [x] -> [y] implies x likes y
      * [x] -/> [y] implies x does not like y
      * There is a max radius of [z]. The closer to z, the less value the likability has.
      * Affinity = distance * likeability
      * Find where every person is located and calculate the affinity for each one.
-     */
-//    private void calculateAffinity(Person[][] floorPlan) {
-//        /*
-//        1. Figure out where everyone is located
-//        2. Calculate each individual's affinity
-//        3. Add it all together
-//         */
-//        for (Person[] rowsOfPeople : floorPlan) {
-//            for (Person person : rowsOfPeople) {
-//                if (person == null) continue;
-//
-//            }
-//        }
-//    }
-
-    /*
-    Demo where we only look around us.
      */
     private void calculateAffinity(Person[][] floorPlan) {
         /*
@@ -167,16 +157,71 @@ public class Facility extends Thread {
         2. Calculate each individual's affinity
         3. Add it all together
          */
+        int affinity = 0;
+        ArrayList<Integer> neighbors = new ArrayList<>();
         for (int i = 0; i < FACILITY_DIMENSION; i++) {
             for (int j = 0; j < FACILITY_DIMENSION; j++) {
                 if (floorPlan[i][j] == null) continue;
-                int affinity = 0;
+                boolean completed = false;
                 try {
-
+                    if (i == 0) {
+                        // can't subtract X
+                    }
+                    if (j == 0) {
+                        // can't subtract Y
+                    }
+                    if (i == 11) {
+                        // can't add X
+                    }
+                    if (j == 11) {
+                        // can't add Y
+                    }
+                    if ((!completed) && i != 0 && j != 0 && i != 11 && j != 11) {
+                        // then you can add or subtract at all times
+                        if (floorPlan[i + 1][j] != null) {
+                            neighbors.add(floorPlan[i + 1][j].function);
+                        }
+                        if (floorPlan[i - 1][j] != null) {
+                            neighbors.add(floorPlan[i - 1][j].function);
+                        }
+                        if (floorPlan[i][j - 1] != null) {
+                            neighbors.add(floorPlan[i][j - 1].function);
+                        }
+                        if (floorPlan[i][j + 1] != null) {
+                            neighbors.add(floorPlan[i][j + 1].function);
+                        }
+                        if (floorPlan[i - 1][j + 1] != null) {
+                            neighbors.add(floorPlan[i - 1][j + 1].function);
+                        }
+                        if (floorPlan[i - 1][j - 1] != null) {
+                            neighbors.add(floorPlan[i - 1][j - 1].function);
+                        }
+                        if (floorPlan[i + 1][j + 1] != null) {
+                            neighbors.add(floorPlan[i + 1][j + 1].function);
+                        }
+                        if (floorPlan[i + 1][j - 1] != null) {
+                            neighbors.add(floorPlan[i + 1][j - 1].function);
+                        }
+                    }
+                    lookAround(floorPlan, i, j);
                 } catch (ArrayIndexOutOfBoundsException e) {
 
                 }
             }
+        }
+    }
+
+    /**
+     * Helper method for calculateAffinity
+     * Looks around the object to see if there are any objects nearby and makes note of it.
+     */
+    private void lookAround(Person[][] floorPlan, int xValue, int yValue) {
+        int affinity = 0;
+        try {
+
+
+        } catch (ArrayIndexOutOfBoundsException e) {
+
         }
     }
 }
