@@ -1,3 +1,5 @@
+package com.example.geneticalgorithmfx.Classes;
+
 import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -11,11 +13,11 @@ public class GeneticAlgorithmTester {
         Person[] listOfPeople = createPersonList(NUMBER_OF_PEOPLE);
 
         // TODO: Create Facilities by using NUMBER_OF_FACILITIES and a loop
-//        ArrayList<Facility> listOfFacilities = new ArrayList<>();
+//        ArrayList<Classes.Facility> listOfFacilities = new ArrayList<>();
 //        for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
-//            listOfFacilities.add(new Facility(floorPlan));
+//            list  OfFacilities.add(new Classes.Facility(floorPlan));
 //        }
-//        for (Facility x : listOfFacilities) {
+//        for (Classes.Facility x : listOfFacilities) {
 //            x.start();
 //        }
 

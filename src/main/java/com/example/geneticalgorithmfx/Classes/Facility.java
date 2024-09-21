@@ -1,12 +1,11 @@
-import java.lang.reflect.Array;
+package com.example.geneticalgorithmfx.Classes;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.concurrent.Exchanger;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Facility is a class that holds a 2d array, representing a floor plan. Each array index represents a location on the floor.
+ * Classes.Facility is a class that holds a 2d array, representing a floor plan. Each array index represents a location on the floor.
  */
 public class Facility extends Thread {
 
@@ -17,16 +16,16 @@ public class Facility extends Thread {
     private ArrayList<Person[][]> solutionSet;
 //    private final Exchanger< String > exchanger;
 
-    //    private HashMap<Integer, Person[][]> solutionSet;
+    //    private HashMap<Integer, Classes.Person[][]> solutionSet;
     int[] affinityKeys;
 
 
     public Facility(int FACILITY_DIMENSION, Person[] listOfPeople) {
-        this.FACILITY_DIMENSION = FACILITY_DIMENSION;
         this.floorPlan = new Person[FACILITY_DIMENSION][FACILITY_DIMENSION];
+        this.affinityKeys = new int[10];
+        this.FACILITY_DIMENSION = FACILITY_DIMENSION;
         this.listOfPeople = listOfPeople;
         this.solutionSet = new ArrayList<>();
-        this.affinityKeys = new int[10];
     }
 
 
@@ -58,7 +57,7 @@ public class Facility extends Thread {
     /**
      * Synchronized are locks used for atomicity. It locks the method then unlocks it at the end.
      *
-     * @param index: the index for the Person stored in the Person array
+     * @param index: the index for the Classes.Person stored in the Classes.Person array
      * @return void: adds a person to the floor plan
      * xValue: the x-axis in the floor plan
      * yValue: the y-axis in the floor plan
@@ -258,7 +257,7 @@ public class Facility extends Thread {
                 if ((!completedIDs.contains(person.id)) && person.function == 3) {
                     affinity += zeroCount;
                 }
-                System.out.println(affinity);
+                System.out.println(this.getId() + " " + affinity);
             }
         }
     }
