@@ -3,6 +3,7 @@ package com.example.geneticalgorithmfx.Classes;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Classes.Facility is a class that holds a 2d array, representing a floor plan. Each array index represents a location on the floor.
@@ -14,24 +15,25 @@ public class Facility extends Thread {
     private Person[][] floorPlan;
     private Person[] listOfPeople;
     private ArrayList<Person[][]> solutionSet;
-//    private final Exchanger< String > exchanger;
-
+    //    private final Exchanger< String > exchanger;
     //    private HashMap<Integer, Classes.Person[][]> solutionSet;
     int[] affinityKeys;
+    final ReentrantLock lock = new ReentrantLock();
 
 
     public Facility(int FACILITY_DIMENSION, Person[] listOfPeople) {
         this.floorPlan = new Person[FACILITY_DIMENSION][FACILITY_DIMENSION];
-        this.affinityKeys = new int[10];
         this.FACILITY_DIMENSION = FACILITY_DIMENSION;
         this.listOfPeople = listOfPeople;
         this.solutionSet = new ArrayList<>();
+        this.affinityKeys = new int[10];
     }
 
 
     /**
      * Run - Starts the program in a multithreaded manner. conjoint with "extends Thread"
      */
+    @Override
     public void run() {
         randomizePeopleInFacility();
     }
@@ -40,9 +42,7 @@ public class Facility extends Thread {
      * Randomly place people in the floor plan.
      * Side Note: Enable thread debugging in Intelli by right-clicking the breakpoint and choosing "Suspend: Thread"
      */
-    public void randomizePeopleInFacility() {
-        // TODO: Figure out how to determine 12 without using 12 explicitly
-
+    public synchronized void randomizePeopleInFacility() {
         int index = 0;
         while (index < listOfPeople.length) {
             addToFloorPlan(index);
@@ -56,7 +56,6 @@ public class Facility extends Thread {
 
     /**
      * Synchronized are locks used for atomicity. It locks the method then unlocks it at the end.
-     *
      * @param index: the index for the Classes.Person stored in the Classes.Person array
      * @return void: adds a person to the floor plan
      * xValue: the x-axis in the floor plan
@@ -129,6 +128,7 @@ public class Facility extends Thread {
         } else {
             addToFloorPlan(index);
         }
+        System.out.println(floorPlan);
     }
 
     private void addToSolutionSet() {
@@ -242,22 +242,29 @@ public class Facility extends Thread {
                 } catch (NullPointerException e) {
                 }
 
-                Person person = floorPlan[i][j];
-                completedIDs.add(person.id);
+                lock.lock();
+                try {
+                    Person person = floorPlan[i][j];
+                    completedIDs.add(person.id);
 
-                if ((!completedIDs.contains(person.id)) && person.function == 0) {
-                    affinity += threeCount;
+                    if ((!completedIDs.contains(person.id)) && person.function == 0) {
+                        affinity += threeCount;
+                    }
+                    if ((!completedIDs.contains(person.id)) && person.function == 1) {
+                        affinity += twoCount;
+                    }
+                    if ((!completedIDs.contains(person.id)) && person.function == 2) {
+                        affinity += oneCount;
+                    }
+                    if ((!completedIDs.contains(person.id)) && person.function == 3) {
+                        affinity += zeroCount;
+                    }
+                    System.out.println(this.getId() + " " + affinity);
+                } finally{
+                    lock.unlock();
                 }
-                if ((!completedIDs.contains(person.id)) && person.function == 1) {
-                    affinity += twoCount;
-                }
-                if ((!completedIDs.contains(person.id)) && person.function == 2) {
-                    affinity += oneCount;
-                }
-                if ((!completedIDs.contains(person.id)) && person.function == 3) {
-                    affinity += zeroCount;
-                }
-                System.out.println(this.getId() + " " + affinity);
+
+
             }
         }
     }
@@ -275,5 +282,10 @@ public class Facility extends Thread {
         } catch (ArrayIndexOutOfBoundsException e) {
 
         }
+    }
+
+
+    public void shutdown() {
+
     }
 }

@@ -11,39 +11,28 @@ public class GeneticAlgorithmTester {
 
     public static void main(String[] args) {
         Person[] listOfPeople = createPersonList(NUMBER_OF_PEOPLE);
-
-        // TODO: Create Facilities by using NUMBER_OF_FACILITIES and a loop
-//        ArrayList<Classes.Facility> listOfFacilities = new ArrayList<>();
-//        for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
-//            list  OfFacilities.add(new Classes.Facility(floorPlan));
-//        }
-//        for (Classes.Facility x : listOfFacilities) {
-//            x.start();
-//        }
-
-        // TODO: Remove this implementation once completed
-        Facility facility = new Facility(FACILITY_DIMENSION, listOfPeople);
-        Facility facility1 = new Facility(FACILITY_DIMENSION, listOfPeople);
         ArrayList<Facility> listOfFacilities = new ArrayList<>();
-        listOfFacilities.add(facility);
-        listOfFacilities.add(facility1);
-
+        for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
+            listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople));
+        }
         for (Facility x : listOfFacilities) {
             x.start();
         }
-
     }
 
     /**
      * This function creates an array of people, with random functions, so that they may be placed in the facility.
+     * There are 4 function types, 0-3, and it is biased so that it produces more numbers of lower value.
      * @param numberOfPeople - insert the number of people that you want created
-     * @return person[] - return an array filled with people of different functions
+     * @return Person[] - return an array filled with people of different functions
      */
     static Person[] createPersonList(int numberOfPeople) {
         Person[] people = new Person[numberOfPeople];
         for (int i = 0; i < numberOfPeople; i++) {
-            int randomInt = ThreadLocalRandom.current().nextInt( 5);
-            people[i] = new Person(randomInt, i);
+            double randomDouble = ThreadLocalRandom.current().nextDouble();
+            double biasedRandomDouble = Math.pow(randomDouble, 2);
+            int personFunction = (int) Math.round(biasedRandomDouble * 3);
+            people[i] = new Person(personFunction, i);
         }
         return people;
     }
