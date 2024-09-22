@@ -5,12 +5,12 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class GeneticAlgorithmTester {
     public static int NUMBER_OF_FACILITIES = 2;
-    public static int FACILITY_DIMENSION = 12;
-    public static int NUMBER_OF_PEOPLE = 4;
+    public static int FACILITY_DIMENSION = 8;
+    public static int NUMBER_OF_PEOPLE = 5;
 
 
     public static void main(String[] args) {
-        Person[] listOfPeople = createPersonList(NUMBER_OF_PEOPLE);
+        Station[] listOfPeople = createPersonList(NUMBER_OF_PEOPLE);
         ArrayList<Facility> listOfFacilities = new ArrayList<>();
         for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
             listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople));
@@ -26,13 +26,13 @@ public class GeneticAlgorithmTester {
      * @param numberOfPeople - insert the number of people that you want created
      * @return Person[] - return an array filled with people of different functions
      */
-    static Person[] createPersonList(int numberOfPeople) {
-        Person[] people = new Person[numberOfPeople];
+    static Station[] createPersonList(int numberOfPeople) {
+        Station[] people = new Station[numberOfPeople];
         for (int i = 0; i < numberOfPeople; i++) {
             double randomDouble = ThreadLocalRandom.current().nextDouble();
             double biasedRandomDouble = Math.pow(randomDouble, 2);
             int personFunction = (int) Math.round(biasedRandomDouble * 3);
-            people[i] = new Person(personFunction, i);
+            people[i] = new Station(personFunction, i);
         }
         return people;
     }

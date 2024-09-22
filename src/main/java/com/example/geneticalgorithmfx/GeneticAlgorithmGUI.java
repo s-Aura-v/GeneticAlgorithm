@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class GeneticAlgorithmGUI extends Application {
+
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(GeneticAlgorithmGUI.class.getResource("hello-view.fxml"));
@@ -15,7 +16,12 @@ public class GeneticAlgorithmGUI extends Application {
         stage.setTitle("Genetic Algorithm");
         stage.setScene(scene);
         stage.show();
+
+        GeneticAlgorithmController controller = fxmlLoader.getController();
+        controller.setDetailedGrid();
+
     }
+
 
     public static void main(String[] args) {
         launch();
