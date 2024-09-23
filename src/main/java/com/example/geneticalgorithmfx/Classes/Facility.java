@@ -14,10 +14,44 @@ public class Facility extends Thread {
     private final Station[][] floorPlan;
     private final Station[] listOfStation;
     private final ArrayList<Station[][]> solutionSet;
-    ArrayList<Integer> affinityKeys = new ArrayList<>();
     private final ReentrantLock lock = new ReentrantLock();
     private final int NUMBER_OF_ITERATIONS;
-    HashMap<Integer, Station[][]> listOfSolutions = new HashMap<>();
+    /**
+     * Affinity keys store the keys so we can access the map in bestSolutionPool.
+     */
+    int[] affinityKeys = new int[10];
+    HashMap<Integer, Station[][]> bestSolutionsPool = new HashMap<>();
+
+    private void insertionSort() {
+        int i, j, item;
+        for (i = 1; i < affinityKeys.length; i++) {
+            item = affinityKeys[i];
+            j = i;
+            while (j > 0 && affinityKeys[j - 1] > item) {
+                affinityKeys[j] = affinityKeys[j - 1];
+                j--;
+            }
+            affinityKeys[j] = item;
+        }
+    }
+
+    void addToBestSolutionsPool(Station station) {
+        int indexToReplace = -1;
+        int affinityPlaceHolder = 0;
+        if (station.function <= affinityKeys[9]) {
+            return;
+        }
+        for (int i = 0; i < 10; i++) {
+            if (affinityPlaceHolder >= affinityKeys[i]) {
+                indexToReplace = i;
+                break;
+            }
+        }
+        for (int i = 9; i > indexToReplace; i--) {
+            affinityKeys[i] = affinityKeys[i - 1];
+        }
+        affinityKeys[indexToReplace] = station.function;
+    }
 
     public Facility(int FACILITY_DIMENSION, Station[] listOfStation, int NUMBER_OF_ITERATIONS) {
         this.floorPlan = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
@@ -406,6 +440,7 @@ public class Facility extends Thread {
         completedIDsForNeighbors.clear();
         return zeroCount + oneCount + twoCount + threeCount;
     }
+
 
     private Station[][] cloneFloorPlan(Station[][] original) {
         Station[][] clone = new Station[original.length][];
