@@ -4,16 +4,17 @@ import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GeneticAlgorithmTester {
-    public static int NUMBER_OF_FACILITIES = 2;
-    public static int FACILITY_DIMENSION = 8;
-    public static int NUMBER_OF_PEOPLE = 5;
+    private static int NUMBER_OF_FACILITIES = 2;
+    private static int FACILITY_DIMENSION = 8;
+    private static int NUMBER_OF_PEOPLE = 5;
+    private static int NUMBER_OF_ITERATIONS = 5;
 
 
     public static void main(String[] args) {
         Station[] listOfPeople = createPersonList(NUMBER_OF_PEOPLE);
         ArrayList<Facility> listOfFacilities = new ArrayList<>();
         for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
-            listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople));
+            listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople, NUMBER_OF_ITERATIONS));
         }
         for (Facility x : listOfFacilities) {
             x.start();

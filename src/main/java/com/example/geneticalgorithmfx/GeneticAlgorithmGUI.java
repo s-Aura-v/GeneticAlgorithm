@@ -18,11 +18,10 @@ public class GeneticAlgorithmGUI extends Application {
         stage.show();
 
         GeneticAlgorithmController controller = fxmlLoader.getController();
-        controller.setDetailedGrid();
+        controller.setSubmitConfigButton();
 
     }
-
-
+     
     public static void main(String[] args) {
         launch();
     }
