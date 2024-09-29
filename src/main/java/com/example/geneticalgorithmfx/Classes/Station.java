@@ -1,5 +1,8 @@
 package com.example.geneticalgorithmfx.Classes;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Classes.Person, representing station, has 4 functions.
  * Functions are defined as 0,1,2,3, representing a station, horizontal station, vertical station, and square station.
@@ -7,14 +10,19 @@ package com.example.geneticalgorithmfx.Classes;
  */
 public class Station {
     int function;
-    int affinity;
+    int crossBred;
     final int id;
     public Station(int function, int id) {
         this.function = function;
         this.id = id;
     }
 
-    public int getFunction() {
-        return function;
+    public int getId() {
+        return id;
     }
+
+    public boolean contains(Station[][] stations){
+        return false;
+    }
+
 }
