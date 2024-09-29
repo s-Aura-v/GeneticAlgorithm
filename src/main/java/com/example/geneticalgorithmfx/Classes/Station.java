@@ -25,4 +25,8 @@ public class Station {
         return false;
     }
 
+    @Override
+    public String toString() {
+        return "hi";
+    }
 }

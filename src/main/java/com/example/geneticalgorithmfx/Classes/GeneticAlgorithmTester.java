@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class GeneticAlgorithmTester {
     public static int NUMBER_OF_FACILITIES = 2;
     private static int FACILITY_DIMENSION = 8;
-    private static int NUMBER_OF_PEOPLE = 5;
+    private static int NUMBER_OF_PEOPLE = 4;
     private static int NUMBER_OF_ITERATIONS = 15;
 
     public static void main(String[] args) {

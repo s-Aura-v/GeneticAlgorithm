@@ -15,8 +15,9 @@ public class Facility extends Thread {
     private final ReentrantLock lock = new ReentrantLock();
     private final int NUMBER_OF_ITERATIONS;
     // Affinity keys store the keys so we can access the map in bestSolutionPool.
-    int AFFINITY_LIMIT = 10;
-    int[] affinityKeys = new int[AFFINITY_LIMIT];
+    private final int AFFINITY_LIMIT = 10;
+    private final int AFFINITY_RADIUS = 5;
+    private int[] affinityKeys = new int[AFFINITY_LIMIT];
     //TEST CASES FOR GLOBAL
     HashMap<Integer, Station[][]> solutionPoolTest = new HashMap<>();
     ArrayList<Station[][]> solutionPoolQuadrants = new ArrayList<>();
@@ -27,6 +28,7 @@ public class Facility extends Thread {
             int randomNumberGenerator = ThreadLocalRandom.current().nextInt(100, 1000);
             solutionPoolTest.put(randomNumberGenerator, cloneFloorPlan(floorPlan));
         }
+        addToGlobalBestSolutions();
     }
 
     /**
@@ -39,184 +41,99 @@ public class Facility extends Thread {
         }
     }
 
+    // FOR TESTING PURPOSES, WE'RE GONNA ASSUME THE FACILITY IS ALWAYS ODD.
+    // FOR TESTING PURPOSES, WE'RE GONNA ASSUME THE FACILITY IS ALWAYS ODD.
+    // FOR TESTING PURPOSES, WE'RE GONNA ASSUME THE FACILITY IS ALWAYS ODD.
     synchronized void addToGlobalBestSolutions() {
-        // GRAB 2 QUADRANTS FROM THREADS
-        // SEE IF THEY FIT ONE ANOTHER
-        // IF THEY DO, COMBINE THEM AND TO GLOBAL
+        // Get the best solution (full facility grid)
         Station[][] solution = getBestSolution();
         ArrayList<Station[][]> listOfQuadrants = new ArrayList<>();
-        solutionPoolQuadrants.add(getBestSolution());
-
+        solutionPoolQuadrants.add(solution); // add full solution to pool
         Station[][] quadrant = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
-        if (FACILITY_DIMENSION % 2 == 0) {
-            ArrayList<Integer> skip = new ArrayList<>();
-            int rightQuad = FACILITY_DIMENSION / 2;
-            int leftQuad = rightQuad - 1;
-            for (int i = 1; i <= leftQuad; i++) {
-                for (int j = 1; i <= leftQuad; i++) {
-                    if (solution[i][j].function == 0) {
-                        quadrant[i][j] = solution[i][j];
-                    }
-                    //Check for horizontal and see if it goes to the other side
-                    if (solution[i][j].function == 1) {
-                        if (solution[i + 1][j].function == 1) {
-                            quadrant[i + 1][j] = solution[i + 1][j];
-                            //RETHINK SKIP
-                            skip.add(i + 1);
-                        }
-                    }
-                    if (solution[i][j].function == 3) {
-                        if (solution[i + 1][j].function == 3) {
-                            quadrant[i + 1][j + 1] = solution[i][j + 1];
-                            quadrant[i + 1][j] = solution[i][j];
-                            quadrant[i + 1][j - 1] = solution[i][j - 1];
-                            //RETHINK SKIP
-                            skip.add(j + 1);
-                            skip.add(j - 1);
-                            skip.add(j);
-                        }
-                    }
-                }
-            }
-            solutionPoolQuadrants.add(quadrant);
-            quadrant = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
-            for (int i = rightQuad; i < FACILITY_DIMENSION; i++) {
-                for (int j = rightQuad; i < FACILITY_DIMENSION; i++) {
-                    quadrant[i][j] = solution[i][j];
-                }
-            }
-            solutionPoolQuadrants.add(quadrant);
-        } else {
-            int leftQuad = (FACILITY_DIMENSION / 2) - 1;
-            int rightQuad = leftQuad + 1;
-            for (int i = 1; i <= leftQuad; i++) {
-                for (int j = 1; j <= leftQuad; j++) {
-                    quadrant[i][j] = solution[i][j];
-                }
-            }
-            solutionPoolQuadrants.add(quadrant);
-            quadrant = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
-            for (int i = rightQuad; i < FACILITY_DIMENSION; i++) {
-                for (int j = rightQuad; i < FACILITY_DIMENSION; i++) {
-                    quadrant[i][j] = solution[i][j];
-                }
+
+        // For odd-numbered quadrants, the facility is naturally separated by a barrier
+        int mid = FACILITY_DIMENSION / 2;
+
+        // Process the left quadrant
+        for (int i = 0; i <= mid; i++) {
+            for (int j = 0; j <= mid; j++) {
+                quadrant[i][j] = solution[i][j];
             }
         }
+        solutionPoolQuadrants.add(quadrant);
+
+        // Process the right quadrant
+        quadrant = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
+        for (int i = mid + 1; i < FACILITY_DIMENSION; i++) {
+            for (int j = mid + 1; i < FACILITY_DIMENSION; i++) {
+                quadrant[i][j] = solution[i][j];
+            }
+        }
+        solutionPoolQuadrants.add(quadrant);
+
         createPooledFacility();
     }
 
+
     synchronized void createPooledFacility() {
+        HashMap<Integer, Station[][]> pooledSolutions = new HashMap<>();
         for (int i = 0; i < solutionPoolQuadrants.size(); i++) {
             for (int j = 0; j < solutionPoolQuadrants.size(); j++) {
-                if (contains(solutionPoolQuadrants.get(i), solutionPoolQuadrants.get(j), solutionPoolQuadrants.size())) {
+                if (contains(solutionPoolQuadrants.get(i), solutionPoolQuadrants.get(j))) {
                     break;
                 } else {
                     System.out.println("WORKS!");
+                    Station[][] merged = merge(solutionPoolQuadrants.get(i), solutionPoolQuadrants.get(j));
+                    System.out.println(calculateAffinity(merged));
                 }
             }
         }
     }
 
     /**
-     * If a creature goes through multiple quadrants, try to relocate it.
+     * Check if the two quadrants have overlapping values.
      */
-    synchronized void relocate(int x, int y, int function, boolean leftQuadrant, Station[][] selectedFloorPlan) {
-        if (leftQuadrant) {
-            switch (function) {
-                case 1: // Horizontal station (shift left or right)
-                    // Try to relocate to the left
-                    if (x > 0 && selectedFloorPlan[x - 1][y] == null) {
-                        selectedFloorPlan[x - 1][y] = selectedFloorPlan[x][y];
-                        selectedFloorPlan[x][y] = null;
-                    } else if (x < FACILITY_DIMENSION - 1 && selectedFloorPlan[x + 1][y] == null) {
-                        // If shifting left is not possible, shift right
-                        selectedFloorPlan[x + 1][y] = selectedFloorPlan[x][y];
-                        selectedFloorPlan[x][y] = null;
-                    }
-                    break;
-
-                case 2: // Vertical station (shift up or down)
-                    if (y > 0 && selectedFloorPlan[x][y - 1] == null) {
-                        selectedFloorPlan[x][y - 1] = selectedFloorPlan[x][y];
-                        selectedFloorPlan[x][y] = null;
-                    } else if (y < FACILITY_DIMENSION - 1 && selectedFloorPlan[x][y + 1] == null) {
-                        selectedFloorPlan[x][y + 1] = selectedFloorPlan[x][y];
-                        selectedFloorPlan[x][y] = null;
-                    }
-                    break;
-
-                case 3: // Square-shaped station
-                    relocateSquareStation(x, y, selectedFloorPlan);
-                    break;
-            }
-        } else {
-            // Try shifting to the right for stations in the right quadrant
-            switch (function) {
-                case 1: // Horizontal station (shift right or left)
-                    if (x < FACILITY_DIMENSION - 1 && selectedFloorPlan[x + 1][y] == null) {
-                        selectedFloorPlan[x + 1][y] = selectedFloorPlan[x][y];
-                        selectedFloorPlan[x][y] = null;
-                    } else if (x > 0 && selectedFloorPlan[x - 1][y] == null) {
-                        // If shifting right is not possible, shift left
-                        selectedFloorPlan[x - 1][y] = selectedFloorPlan[x][y];
-                        selectedFloorPlan[x][y] = null;
-                    }
-                    break;
-
-                case 2: // Vertical station (shift down or up)
-                    if (y < FACILITY_DIMENSION - 1 && selectedFloorPlan[x][y + 1] == null) {
-                        selectedFloorPlan[x][y + 1] = selectedFloorPlan[x][y];
-                        selectedFloorPlan[x][y] = null;
-                    } else if (y > 0 && selectedFloorPlan[x][y - 1] == null) {
-                        selectedFloorPlan[x][y - 1] = selectedFloorPlan[x][y];
-                        selectedFloorPlan[x][y] = null;
-                    }
-                    break;
-
-                case 3: // Square-shaped station
-                    relocateSquareStation(x, y, selectedFloorPlan);
-                    break;
-            }
-        }
-    }
-
-    /**
-     * Relocates a square-shaped station by checking all surrounding cells and shifting left or right.
-     */
-    private void relocateSquareStation(int x, int y, Station[][] selectedFloorPlan) {
-        lock.lock();
+    synchronized boolean contains(Station[][] station1, Station[][] station2) {
         try {
-            // Check if all 3x3 surrounding cells can be shifted to the left
-            if (x > 0 && selectedFloorPlan[x - 1][y] == null && selectedFloorPlan[x - 1][y - 1] == null &&
-                    selectedFloorPlan[x - 1][y + 1] == null) {
-                selectedFloorPlan[x - 1][y] = selectedFloorPlan[x][y];
-                selectedFloorPlan[x][y] = null;
-            }
-            // Else check if all 3x3 surrounding cells can be shifted to the right
-            else if (x < FACILITY_DIMENSION - 1 && selectedFloorPlan[x + 1][y] == null &&
-                    selectedFloorPlan[x + 1][y - 1] == null && selectedFloorPlan[x + 1][y + 1] == null) {
-                selectedFloorPlan[x + 1][y] = selectedFloorPlan[x][y];
-                selectedFloorPlan[x][y] = null;
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
-
-    synchronized boolean contains(Station[][] station1, Station[][] station2, int size) {
-        for (Station[] row1 : station1) {
-            for (Station value1 : row1) {
-                for (Station[] row2 : station2) {
-                    for (Station value2 : row2) {
-                        if (value1.getId() == value2.getId()) {
-                            return true;
+            for (Station[] row1 : station1) {
+                for (Station value1 : row1) {
+                    for (Station[] row2 : station2) {
+                        for (Station value2 : row2) {
+                            if (value1.getId() == value2.getId()) {
+                                return true;
+                            }
                         }
                     }
                 }
             }
+            return false;
+        } catch (NullPointerException e) {
         }
         return false;
+    }
+
+    /**
+     * Combine two quadrants.
+     */
+    synchronized Station[][] merge(Station[][] quadrant1, Station[][] quadrant2) {
+        int leftQuadrant = FACILITY_DIMENSION / 2 - 1;
+        int rightQuadrant = leftQuadrant + 2;
+        Station[][] merged = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
+
+        // Copy quadrant1 into the left half of the merged array
+        for (int i = 0; i < leftQuadrant; i++) {
+            for (int j = 0; j < FACILITY_DIMENSION; j++) {
+                merged[i][j] = quadrant1[i][j];
+            }
+        }
+
+        // Copy quadrant2 into the right half of the merged array
+        for (int i = rightQuadrant; i < FACILITY_DIMENSION; i++) {
+            for (int j = rightQuadrant; j < FACILITY_DIMENSION; j++) {
+                merged[i][j] = quadrant2[i][j]; // Offset by the width of quadrant1
+            }
+        }
+        return merged;
     }
 
 
@@ -418,222 +335,75 @@ public class Facility extends Thread {
         return (affinity);
     }
 
-    /**
-     * TODO: I could recurse this using function.
-     * TODO: Add weight so the affinity actually matters.
-     *
+    /***
      * @param floorPlan    - the 2d array of stations
-     * @param i            - the xValue of the station
-     * @param j            - the yValue of the station
+     * @param x            - the xValue of the station
+     * @param y            - the yValue of the station
      * @param completedIDs - set to make sure the affinity doesn't count itself multiple times (since they can take multiple spaces).
      */
-    private int calculateIndividualAffinity(Station[][] floorPlan, int i, int j, HashSet<Integer> completedIDs) {
-        //TODO: Should I convert this to AtomicInteger? or maybe add a lock again? or just leave it be.
-        int zeroCount = 0, oneCount = 0, twoCount = 0, threeCount = 0;
-        completedIDs.add(floorPlan[i][j].id);
+    private int calculateIndividualAffinity(Station[][] floorPlan, int x, int y, HashSet<Integer> completedIDs) {
+        int affinity = 0;
+        completedIDs.add(floorPlan[x][y].id);
         HashSet<Integer> completedIDsForNeighbors = new HashSet<>();
 
-        try {
-            if (floorPlan[i][j].id == floorPlan[i + 1][j].id
-                    || completedIDsForNeighbors.contains(floorPlan[i + 1][j].id)) {
-                throw new NullPointerException();
+        for (int radius = 1; radius < AFFINITY_RADIUS; radius++) {
+            // Check the boundaries and avoid out-of-bounds access
+            if (x + radius < floorPlan.length) {
+                affinity += processStation(floorPlan, x + radius, y, floorPlan[x][y], completedIDsForNeighbors);
             }
-            switch (floorPlan[i + 1][j].function) {
-                case 0:
-                    zeroCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j].id);
-                    break;
-                case 1:
-                    oneCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j].id);
-                    break;
-                case 2:
-                    twoCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j].id);
-                    break;
-                case 3:
-                    threeCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j].id);
-                    break;
+            if (x - radius >= 0) {
+                affinity += processStation(floorPlan, x - radius, y, floorPlan[x][y], completedIDsForNeighbors);
             }
-        } catch (NullPointerException ignored) {
+            if (y + radius < floorPlan[0].length) {
+                affinity += processStation(floorPlan, x, y + radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (y - radius >= 0) {
+                affinity += processStation(floorPlan, x, y - radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (x + radius < floorPlan.length && y + radius < floorPlan[0].length) {
+                affinity += processStation(floorPlan, x + radius, y + radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (x - radius >= 0 && y + radius < floorPlan[0].length) {
+                affinity += processStation(floorPlan, x - radius, y + radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (x + radius < floorPlan.length && y - radius >= 0) {
+                affinity += processStation(floorPlan, x + radius, y - radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (x - radius >= 0 && y - radius >= 0) {
+                affinity += processStation(floorPlan, x - radius, y - radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
         }
-        try {
-            if (floorPlan[i][j].id == floorPlan[i - 1][j].id
-                    || completedIDsForNeighbors.contains(floorPlan[i - 1][j].id)) {
-                throw new NullPointerException();
-            }
-            switch (floorPlan[i - 1][j].function) {
-                case 0:
-                    zeroCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j].id);
-                    break;
-                case 1:
-                    oneCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j].id);
-                    break;
-                case 2:
-                    twoCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j].id);
-                    break;
-                case 3:
-                    threeCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j].id);
-                    break;
-            }
-        } catch (NullPointerException ignored) {
-        }
-        try {
-            if (floorPlan[i][j].id == floorPlan[i][j + 1].id
-                    || completedIDsForNeighbors.contains(floorPlan[i - 1][j].id)) {
-                throw new NullPointerException();
-            }
-            switch (floorPlan[i][j + 1].function) {
-                case 0:
-                    zeroCount++;
-                    completedIDsForNeighbors.add(floorPlan[i][j + 1].id);
-                    break;
-                case 1:
-                    oneCount++;
-                    completedIDsForNeighbors.add(floorPlan[i][j + 1].id);
-                    break;
-                case 2:
-                    twoCount++;
-                    completedIDsForNeighbors.add(floorPlan[i][j + 1].id);
-                    break;
-                case 3:
-                    threeCount++;
-                    completedIDsForNeighbors.add(floorPlan[i][j + 1].id);
-                    break;
-            }
-        } catch (NullPointerException ignored) {
-        }
-        try {
-            if (floorPlan[i][j].id == floorPlan[i][j - 1].id
-                    || completedIDsForNeighbors.contains(floorPlan[i - 1][j].id)) {
-                throw new NullPointerException();
-            }
-            switch (floorPlan[i][j - 1].function) {
-                case 0:
-                    zeroCount++;
-                    completedIDsForNeighbors.add(floorPlan[i][j - 1].id);
-                    break;
-                case 1:
-                    oneCount++;
-                    completedIDsForNeighbors.add(floorPlan[i][j - 1].id);
-                    break;
-                case 2:
-                    twoCount++;
-                    completedIDsForNeighbors.add(floorPlan[i][j - 1].id);
-                    break;
-                case 3:
-                    threeCount++;
-                    completedIDsForNeighbors.add(floorPlan[i][j - 1].id);
-                    break;
-            }
-        } catch (NullPointerException ignored) {
-        }
-        try {
-            if (floorPlan[i][j].id == floorPlan[i - 1][j + 1].id
-                    || completedIDsForNeighbors.contains(floorPlan[i - 1][j].id)) {
-                throw new NullPointerException();
-            }
-            switch (floorPlan[i - 1][j + 1].function) {
-                case 0:
-                    zeroCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j + 1].id);
-                    break;
-                case 1:
-                    oneCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j + 1].id);
-                    break;
-                case 2:
-                    twoCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j + 1].id);
-                    break;
-                case 3:
-                    threeCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j + 1].id);
-                    break;
-            }
-        } catch (NullPointerException e) {
-        }
-        try {
-            if (floorPlan[i][j].id == floorPlan[i - 1][j - 1].id
-                    || completedIDsForNeighbors.contains(floorPlan[i - 1][j].id)) {
-                throw new NullPointerException();
-            }
-            switch (floorPlan[i - 1][j - 1].function) {
-                case 0:
-                    zeroCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j - 1].id);
-                    break;
-                case 1:
-                    oneCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j - 1].id);
-                    break;
-                case 2:
-                    twoCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j - 1].id);
-                    break;
-                case 3:
-                    threeCount++;
-                    completedIDsForNeighbors.add(floorPlan[i - 1][j - 1].id);
-                    break;
-            }
-        } catch (NullPointerException e) {
-        }
-        try {
-            if (floorPlan[i][j].id == floorPlan[i + 1][j + 1].id
-                    || completedIDsForNeighbors.contains(floorPlan[i - 1][j].id)) {
-                throw new NullPointerException();
-            }
-            switch (floorPlan[i + 1][j + 1].function) {
-                case 0:
-                    zeroCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j + 1].id);
-                    break;
-                case 1:
-                    oneCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j + 1].id);
-                    break;
-                case 2:
-                    twoCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j + 1].id);
-                    break;
-                case 3:
-                    threeCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j + 1].id);
-                    break;
-            }
-        } catch (NullPointerException ignored) {
-        }
-        try {
-            if (floorPlan[i][j].id == floorPlan[i + 1][j - 1].id
-                    || completedIDsForNeighbors.contains(floorPlan[i - 1][j].id)) {
-                throw new NullPointerException();
-            }
-            switch (floorPlan[i + 1][j - 1].function) {
-                case 0:
-                    zeroCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j - 1].id);
-                    break;
-                case 1:
-                    oneCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j - 1].id);
-                    break;
-                case 2:
-                    twoCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j - 1].id);
-                    break;
-                case 3:
-                    threeCount++;
-                    completedIDsForNeighbors.add(floorPlan[i + 1][j - 1].id);
-                    break;
-            }
-        } catch (NullPointerException ignored) {
-        }
+
         completedIDsForNeighbors.clear();
+        return affinity;
+    }
+
+    private int processStation(Station[][] floorPlan, int x, int y, Station currentStation, HashSet<Integer> completedIDsForNeighbors) {
+        int zeroCount = 0, oneCount = 0, twoCount = 0, threeCount = 0;
+        try {
+            if (currentStation.id == floorPlan[x][y].id || completedIDsForNeighbors.contains(floorPlan[x][y].id)) {
+                return 0;
+            }
+            switch (floorPlan[x][y].function) {
+                case 0:
+                    zeroCount++;
+                    completedIDsForNeighbors.add(floorPlan[x][y].id);
+                    break;
+                case 1:
+                    oneCount++;
+                    completedIDsForNeighbors.add(floorPlan[x][y].id);
+                    break;
+                case 2:
+                    twoCount++;
+                    completedIDsForNeighbors.add(floorPlan[x][y].id);
+                    break;
+                case 3:
+                    threeCount++;
+                    completedIDsForNeighbors.add(floorPlan[x][y].id);
+                    break;
+            }
+        } catch (NullPointerException ignored) {
+        }
         return zeroCount + oneCount + twoCount + threeCount;
     }
 
@@ -688,6 +458,7 @@ public class Facility extends Thread {
         bestSolutionsPool.put(affinity, floorPlan);
     }
 
+
     /**
      * Clear all arrays and references so the iteration can start anew.
      */
@@ -698,6 +469,4 @@ public class Facility extends Thread {
             }
         }
     }
-
-
 }
