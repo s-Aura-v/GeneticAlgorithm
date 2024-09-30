@@ -9,14 +9,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
-import java.awt.*;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
-
-import static java.awt.Color.white;
 
 
 public class GeneticAlgorithmController {
@@ -91,8 +88,10 @@ public class GeneticAlgorithmController {
             int NUMBER_OF_STATIONS = Integer.parseInt(numOfStationsText.getText());
             Station[] listOfPeople = createPersonList(NUMBER_OF_STATIONS);
             ArrayList<Facility> listOfFacilities = new ArrayList<>();
+            CountDownLatch latch = new CountDownLatch(NUMBER_OF_FACILITIES);
+
             for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
-                listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople, NUMBER_OF_ITERATIONS));
+                listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople, NUMBER_OF_ITERATIONS, latch));
             }
             for (Facility x : listOfFacilities) {
                 x.start();

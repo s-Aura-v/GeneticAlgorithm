@@ -1,8 +1,11 @@
 package com.example.geneticalgorithmfx.Classes;
 
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.example.geneticalgorithmfx.Classes.GeneticAlgorithmTester.bestSolutionsPool;
 
 /**
  * Facility is a class that holds a 2d array, representing a floor plan. Each array index represents a location on the floor.
@@ -14,153 +17,17 @@ public class Facility extends Thread {
     private final Station[] listOfStation;
     private final ReentrantLock lock = new ReentrantLock();
     private final int NUMBER_OF_ITERATIONS;
-    // Affinity keys store the keys so we can access the map in bestSolutionPool.
-    private final int AFFINITY_LIMIT = 10;
     private final int AFFINITY_RADIUS = 5;
-    private int[] affinityKeys = new int[AFFINITY_LIMIT];
     //TEST CASES FOR GLOBAL
-    HashMap<Integer, Station[][]> solutionPoolTest = new HashMap<>();
-    ArrayList<Station[][]> solutionPoolQuadrants = new ArrayList<>();
-    HashMap<Integer, Station[][]> bestSolutionsPool = new HashMap<>();
-
-    void fillSolutionPoolTest() {
-        for (int i = 0; i < AFFINITY_LIMIT; i++) {
-            int randomNumberGenerator = ThreadLocalRandom.current().nextInt(100, 1000);
-            solutionPoolTest.put(randomNumberGenerator, cloneFloorPlan(floorPlan));
-        }
-        addToGlobalBestSolutions();
-    }
-
-    /**
-     * For odd sized facilities, add a center wall to make quadrant selection easier
-     */
-    void addArrayBorders() {
-        int midpoint = FACILITY_DIMENSION / 2;
-        for (int i = 0; i < FACILITY_DIMENSION; i++) {
-            floorPlan[midpoint][i] = new Station(-1, -1);
-        }
-    }
-
-    // FOR TESTING PURPOSES, WE'RE GONNA ASSUME THE FACILITY IS ALWAYS ODD.
-    // FOR TESTING PURPOSES, WE'RE GONNA ASSUME THE FACILITY IS ALWAYS ODD.
-    // FOR TESTING PURPOSES, WE'RE GONNA ASSUME THE FACILITY IS ALWAYS ODD.
-    synchronized void addToGlobalBestSolutions() {
-        // Get the best solution (full facility grid)
-        Station[][] solution = getBestSolution();
-        ArrayList<Station[][]> listOfQuadrants = new ArrayList<>();
-        solutionPoolQuadrants.add(solution); // add full solution to pool
-        Station[][] quadrant = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
-
-        // For odd-numbered quadrants, the facility is naturally separated by a barrier
-        int mid = FACILITY_DIMENSION / 2;
-
-        // Process the left quadrant
-        for (int i = 0; i <= mid; i++) {
-            for (int j = 0; j <= mid; j++) {
-                quadrant[i][j] = solution[i][j];
-            }
-        }
-        solutionPoolQuadrants.add(quadrant);
-
-        // Process the right quadrant
-        quadrant = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
-        for (int i = mid + 1; i < FACILITY_DIMENSION; i++) {
-            for (int j = mid + 1; i < FACILITY_DIMENSION; i++) {
-                quadrant[i][j] = solution[i][j];
-            }
-        }
-        solutionPoolQuadrants.add(quadrant);
-
-        createPooledFacility();
-    }
+    CountDownLatch latch;
 
 
-    synchronized void createPooledFacility() {
-        HashMap<Integer, Station[][]> pooledSolutions = new HashMap<>();
-        for (int i = 0; i < solutionPoolQuadrants.size(); i++) {
-            for (int j = 0; j < solutionPoolQuadrants.size(); j++) {
-                if (contains(solutionPoolQuadrants.get(i), solutionPoolQuadrants.get(j))) {
-                    break;
-                } else {
-                    System.out.println("WORKS!");
-                    Station[][] merged = merge(solutionPoolQuadrants.get(i), solutionPoolQuadrants.get(j));
-                    System.out.println(calculateAffinity(merged));
-                }
-            }
-        }
-    }
-
-    /**
-     * Check if the two quadrants have overlapping values.
-     */
-    synchronized boolean contains(Station[][] station1, Station[][] station2) {
-        try {
-            for (Station[] row1 : station1) {
-                for (Station value1 : row1) {
-                    for (Station[] row2 : station2) {
-                        for (Station value2 : row2) {
-                            if (value1.getId() == value2.getId()) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        } catch (NullPointerException e) {
-        }
-        return false;
-    }
-
-    /**
-     * Combine two quadrants.
-     */
-    synchronized Station[][] merge(Station[][] quadrant1, Station[][] quadrant2) {
-        int leftQuadrant = FACILITY_DIMENSION / 2 - 1;
-        int rightQuadrant = leftQuadrant + 2;
-        Station[][] merged = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
-
-        // Copy quadrant1 into the left half of the merged array
-        for (int i = 0; i < leftQuadrant; i++) {
-            for (int j = 0; j < FACILITY_DIMENSION; j++) {
-                merged[i][j] = quadrant1[i][j];
-            }
-        }
-
-        // Copy quadrant2 into the right half of the merged array
-        for (int i = rightQuadrant; i < FACILITY_DIMENSION; i++) {
-            for (int j = rightQuadrant; j < FACILITY_DIMENSION; j++) {
-                merged[i][j] = quadrant2[i][j]; // Offset by the width of quadrant1
-            }
-        }
-        return merged;
-    }
-
-
-    /**
-     * Flatten the 2d array of stations in floor plan into a 1d array of ids so I can use them to determine if they are capable of fitting.
-     */
-    synchronized static int[] flatten(Station[][] arr) {
-        return Arrays.stream(arr) // Stream of MyClass[]
-                .flatMap(Arrays::stream) // Flatten MyClass[][] to MyClass[]
-                .mapToInt(Station::getId) // Map MyClass to int using getValue()
-                .toArray(); // Collect as an int[] array
-    }
-
-    synchronized Station[][] getBestSolution() {
-        if (bestSolutionsPool.isEmpty()) {
-            return null;
-        }
-        int highestAffinity = bestSolutionsPool.keySet().stream().mapToInt(v -> v).max().orElse(Integer.MIN_VALUE);
-        return bestSolutionsPool.get(highestAffinity);
-    }
-
-
-    public Facility(int FACILITY_DIMENSION, Station[] listOfStation, int NUMBER_OF_ITERATIONS) {
+    public Facility(int FACILITY_DIMENSION, Station[] listOfStation, int NUMBER_OF_ITERATIONS, CountDownLatch latch) {
         this.floorPlan = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
         this.FACILITY_DIMENSION = FACILITY_DIMENSION;
         this.listOfStation = listOfStation;
         this.NUMBER_OF_ITERATIONS = NUMBER_OF_ITERATIONS;
+        this.latch = latch;
     }
 
     @Override
@@ -172,7 +39,7 @@ public class Facility extends Thread {
             clearAll();
             i++;
         }
-        fillSolutionPoolTest();
+        latch.countDown();
     }
 
     /**
@@ -188,16 +55,7 @@ public class Facility extends Thread {
             }
             int affinity = calculateAffinity(floorPlan);
             System.out.println(affinity);
-
-            // Adds data into a solution pool
-            if (bestSolutionsPool.size() < AFFINITY_LIMIT) {
-                bestSolutionsPool.put(affinity, cloneFloorPlan(floorPlan));
-            } else if (bestSolutionsPool.size() == AFFINITY_LIMIT) {
-                affinityKeys = bestSolutionsPool.keySet().stream().mapToInt(Integer::intValue).toArray();
-                insertionSort();
-            } else {
-                addToBestSolutionsPool(affinity);
-            }
+            bestSolutionsPool.put(affinity, cloneFloorPlan(floorPlan));
         } finally {
             lock.unlock();
         }
@@ -420,44 +278,6 @@ public class Facility extends Thread {
         return floorPlan;
     }
 
-    /**
-     * Sorts the affinity array (keys for hashMap) once 10 elements are added.
-     * Insertion sort is used due to the array's small size.
-     */
-    private void insertionSort() {
-        int i, j, item;
-        for (i = 1; i < affinityKeys.length; i++) {
-            item = affinityKeys[i];
-            j = i;
-            while (j > 0 && affinityKeys[j - 1] < item) {
-                affinityKeys[j] = affinityKeys[j - 1];
-                j--;
-            }
-            affinityKeys[j] = item;
-        }
-    }
-
-    /**
-     * Checks if affinity is higher than the values at the top 10; if true, then adds it to the arrays.
-     */
-    private void addToBestSolutionsPool(int affinity) {
-        int indexToReplace = -1;
-        if (affinity <= affinityKeys[AFFINITY_LIMIT - 1]) {
-            return;
-        }
-        for (int i = 0; i < AFFINITY_LIMIT; i++) {
-            if (affinity >= affinityKeys[i]) {
-                indexToReplace = i;
-                break;
-            }
-        }
-        for (int i = AFFINITY_LIMIT - 1; i > indexToReplace; i--) {
-            affinityKeys[i] = affinityKeys[i - 1];
-        }
-        affinityKeys[indexToReplace] = affinity;
-        bestSolutionsPool.put(affinity, floorPlan);
-    }
-
 
     /**
      * Clear all arrays and references so the iteration can start anew.
@@ -469,4 +289,18 @@ public class Facility extends Thread {
             }
         }
     }
+
+    /**
+     * For odd sized facilities, add a center wall to make quadrant selection easier
+     */
+    void addArrayBorders() {
+        int midpoint = FACILITY_DIMENSION / 2;
+        for (int i = 0; i < FACILITY_DIMENSION; i++) {
+            floorPlan[midpoint][i] = new Station(-1, -1);
+        }
+    }
+
+
+
+
 }

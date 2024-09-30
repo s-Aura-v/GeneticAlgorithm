@@ -10,7 +10,6 @@ import java.util.List;
  */
 public class Station {
     int function;
-    int crossBred;
     final int id;
     public Station(int function, int id) {
         this.function = function;
