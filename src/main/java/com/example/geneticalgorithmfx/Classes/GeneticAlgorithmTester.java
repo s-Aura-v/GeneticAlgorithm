@@ -32,17 +32,40 @@ public class GeneticAlgorithmTester {
 
     }
 
+    /**
+     * Create new factories based on the best solutions which have been divided into halves.
+     * Add left (even index) with right (odd index) factories;
+     * @param dividedSolutionPools
+     */
     private static void recreateNewFacilities(ArrayList<Station[][]> dividedSolutionPools) {
+        int midpoint = (FACILITY_DIMENSION / 2);
+        int rightHalf = midpoint + 1;
+        ArrayList<Station[][]> recreatedSolutionPools = new ArrayList<>();
         for (int i = 0; i < dividedSolutionPools.size(); i++) {
             Set<Integer> listOfIDS = flatten(dividedSolutionPools.get(i));
             for (int j = 0; j < dividedSolutionPools.size(); j++) {
                 Set<Integer> candidate = flatten(dividedSolutionPools.get(j));
                 boolean hasCommonElement = listOfIDS.stream().anyMatch(candidate::contains);
                 if (!hasCommonElement) {
-                    System.out.println(candidate + " AND " + listOfIDS);
+                    Station[][] mergedFloorPlan = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
+                    if ((i + j)%2 != 0) {
+                        for (int x = 0; x < midpoint; x++) {
+                            for (int y = 0; y < FACILITY_DIMENSION; y++) {
+                                if (i%2 == 0) {
+                                    mergedFloorPlan[x][y] = dividedSolutionPools.get(i)[x][y];
+                                    mergedFloorPlan[x+rightHalf][y] = dividedSolutionPools.get(j)[x+rightHalf][y];
+                                } else {
+                                    mergedFloorPlan[x][y] = dividedSolutionPools.get(j)[x][y];
+                                    mergedFloorPlan[x+rightHalf][y] = dividedSolutionPools.get(i)[x+rightHalf][y];
+                                }
+                            }
+                        }
+                        recreatedSolutionPools.add(mergedFloorPlan);
+                    }
                 }
             }
         }
+        System.out.println(recreatedSolutionPools);;
     }
 
     static Set<Integer> flatten(Station[][] arr) throws NullPointerException {
@@ -57,7 +80,7 @@ public class GeneticAlgorithmTester {
 
     /**
      * Divides the solution hashmap into halves so that it can be reassembled to create a new facility
-     *
+     * All left quadrants are going inside even index and vice versa.
      * @return ArrayList of Stations' Halves
      */
     private static ArrayList<Station[][]> divideIntoHalves() {
