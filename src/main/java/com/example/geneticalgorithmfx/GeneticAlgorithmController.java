@@ -1,6 +1,7 @@
 package com.example.geneticalgorithmfx;
 
 import com.example.geneticalgorithmfx.Classes.Facility;
+import com.example.geneticalgorithmfx.Classes.GeneticAlgorithmTester;
 import com.example.geneticalgorithmfx.Classes.Station;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -8,7 +9,9 @@ import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.shape.Rectangle;
 
 import java.util.ArrayList;
@@ -24,7 +27,13 @@ public class GeneticAlgorithmController {
     private GridPane detailedGrid;
 
     @FXML
+    private GridPane facilitiesOverviewGrid;
+
+    @FXML
     private AnchorPane detailedGridContainer;
+
+    @FXML
+    private AnchorPane facilitiesOverviewContainer;
 
     @FXML
     private Tab detailedTab;
@@ -70,14 +79,6 @@ public class GeneticAlgorithmController {
                 detailedGrid.setVgap(1);
             }
         }
-//        for (int i = 1; i < dimensions - 1; i++) {
-//            for (int j = 1; j < dimensions - 1; j++) {
-//                if (floorPlan[i][j] != null) {
-//                    detailedGrid.getChildren().remove(i,j);
-//                    detailedGrid.add(new Rectangle(rectangleWidth, rectangleHeight, Color.BLUEVIOLET),i,j);
-//                }
-//            }
-//        }
     }
 
     public void setSubmitConfigButton() {
@@ -96,10 +97,83 @@ public class GeneticAlgorithmController {
             for (Facility x : listOfFacilities) {
                 x.start();
             }
-            setDetailedGrid(FACILITY_DIMENSION, listOfFacilities.getFirst().getFloorPlan());
 
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            setDetailedGrid(FACILITY_DIMENSION, listOfFacilities.getFirst().getFloorPlan());
+            createFacilitiesOverviewGrid();
         });
     }
+
+    private void createFacilitiesOverviewGrid() {
+        facilitiesOverviewGrid = new GridPane();
+        facilitiesOverviewGrid.setAlignment(Pos.TOP_CENTER);
+        facilitiesOverviewGrid.setHgap(1);
+        facilitiesOverviewGrid.setVgap(1);
+        facilitiesOverviewGrid.setGridLinesVisible(true);
+
+        final int numCols = 9;
+        final int numRows = 9;
+
+        for (int i = 0; i < numCols; i++) {
+            ColumnConstraints colConst = new ColumnConstraints();
+            colConst.setPercentWidth(100.0 / numCols);
+            facilitiesOverviewGrid.getColumnConstraints().add(colConst);
+        }
+        for (int i = 0; i < numRows; i++) {
+            RowConstraints rowConst = new RowConstraints();
+            rowConst.setPercentHeight(100.0 / numRows);
+            facilitiesOverviewGrid.getRowConstraints().add(rowConst);
+        }
+
+        facilitiesOverviewContainer.getChildren().clear();
+        facilitiesOverviewContainer.getChildren().add(facilitiesOverviewGrid);
+
+        for (Station[][] floorPlan : GeneticAlgorithmTester.bestSolutionsPool.values()) {
+            int dimensions = 9;
+            for (int i = 0; i < numRows; i++) {
+                for (int j = 0; j < numCols; j++) {
+                    facilitiesOverviewGrid.add(createNewCell(dimensions, floorPlan), i, j);
+                }
+            }
+        }
+    }
+
+    public AnchorPane createNewCell(int dimensions, Station[][] floorPlan) {
+        AnchorPane cell = new AnchorPane();
+
+        // Set preferred size for the AnchorPane
+        // TODO: LOOK INTO THIS
+        cell.setPrefSize(50, 50);
+
+        GridPane cellGrid = new GridPane();
+        cellGrid.setAlignment(Pos.TOP_CENTER);
+        cellGrid.setHgap(0);
+        cellGrid.setVgap(0);
+
+        // EDIT THIS LATER...
+        cellGrid.setPrefSize(cell.getPrefWidth(), cell.getPrefHeight());
+
+        double totalHeight = cellGrid.getPrefHeight();
+        double totalWidth = cellGrid.getPrefWidth();
+        double rectangleWidth = (totalWidth / dimensions) - 1;
+        double rectangleHeight = (totalHeight / dimensions) - 1;
+
+        for (int i = 0; i < dimensions; i++) {
+            for (int j = 0; j < dimensions; j++) {
+                Rectangle rect = new Rectangle(rectangleWidth, rectangleHeight);
+                cellGrid.add(rect, i, j);  // Add rectangles to the grid
+            }
+        }
+
+        cell.getChildren().add(cellGrid);
+        return cell;
+    }
+
 
     /**
      * This function creates an array of people, with random functions, so that they may be placed in the facility.
