@@ -266,6 +266,11 @@ public class Facility extends Thread {
         return zeroCount + oneCount + twoCount + threeCount;
     }
 
+    private boolean isWithinBounds(Station[][] floorPlan, int x, int y) {
+        return x >= 0 && x < floorPlan.length && y >= 0 && y < floorPlan[0].length;
+    }
+
+
 
     private Station[][] cloneFloorPlan(Station[][] original) {
         Station[][] clone = new Station[original.length][];

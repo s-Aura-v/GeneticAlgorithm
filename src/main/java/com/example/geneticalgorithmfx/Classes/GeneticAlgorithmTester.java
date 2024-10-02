@@ -7,8 +7,8 @@ import java.util.stream.Collectors;
 
 public class GeneticAlgorithmTester {
     public static int NUMBER_OF_FACILITIES = 2;
-    private static int FACILITY_DIMENSION = 21;
-    private static int NUMBER_OF_PEOPLE = 62;
+    private static int FACILITY_DIMENSION = 9;
+    private static int NUMBER_OF_PEOPLE = 4;
     private static int NUMBER_OF_ITERATIONS = 15;
     private static int AFFINITY_RADIUS = 5;
     //Global Variable that stores the best solutions
@@ -137,91 +137,90 @@ public class GeneticAlgorithmTester {
         return people;
     }
 
+    /**
+     * Calculates total affinity for the entire floor plan
+     * @param floorPlan - the 2d array holding the stations
+     * @return affinity - the total affinity between the stations in the floor plan
+     */
     private static int calculateAffinity(Station[][] floorPlan) {
         int affinity = 0;
-        HashSet<Integer> completedIDs = new HashSet<>();
 
         for (int i = 1; i < FACILITY_DIMENSION - 1; i++) {
             for (int j = 1; j < FACILITY_DIMENSION - 1; j++) {
                 if (floorPlan[i][j] == null) continue;
-                if (completedIDs.contains(floorPlan[i][j].id)) continue;
-
-                affinity = calculateIndividualAffinity(floorPlan, i, j, completedIDs);
+                int[] functions = calculateIndividualAffinity(floorPlan, i, j);
+                for (int function : functions) {
+                    switch (function) {
+                        case 0: if (floorPlan[i][j].function == 3) { affinity++; break; }
+                        case 1: if (floorPlan[i][j].function == 2) { affinity++; break; }
+                        case 2: if (floorPlan[i][j].function == 1) { affinity++; break; }
+                        case 3: if (floorPlan[i][j].function == 0) { affinity++; break; }
+                    }
+                }
             }
         }
         return (affinity);
     }
 
     /**
-     * Helper for calculate affinity
-     * @param floorPlan    - the 2d array of stations
-     * @param x            - the xValue of the station
-     * @param y            - the yValue of the station
-     * @param completedIDs - set to make sure the affinity doesn't count itself multiple times (since they can take multiple spaces).
+     * Function Counts - Stores the amount of times the function appears in the radius.
+     * @param floorPlan
+     * @param x
+     * @param y
+     * @return
      */
-    private static int calculateIndividualAffinity(Station[][] floorPlan, int x, int y, HashSet<Integer> completedIDs) {
-        int affinity = 0;
-        completedIDs.add(floorPlan[x][y].id);
-        HashSet<Integer> completedIDsForNeighbors = new HashSet<>();
+    private static int[] calculateIndividualAffinity(Station[][] floorPlan, int x, int y) {
+        int radius = 2;
+        int[] functionCounts = new int[4];
+        HashSet<Integer> completedIDs = new HashSet<>();
 
-        for (int radius = 1; radius < AFFINITY_RADIUS; radius++) {
-            // Check the boundaries and avoid out-of-bounds access
-            if (x + radius < floorPlan.length) {
-                affinity += processStation(floorPlan, x + radius, y, floorPlan[x][y], completedIDsForNeighbors);
+        // Perfect Situation: If all space is available within the bounds
+        if (calculateTopLeftCoordinate(x, y, radius)) {
+            for (int i = x - radius; i < x + radius; i++) {
+                for (int j = y - radius; j < y + radius; j++) {
+                    // Skip if cell is null or function already counted
+                    if (floorPlan[i][j] == null || completedIDs.contains(floorPlan[i][j].id)) continue;
+
+                    // Count functions and add to completedIDs
+                    switch (floorPlan[i][j].function) {
+                        case 0: functionCounts[0]++; completedIDs.add(floorPlan[i][j].id); break;
+                        case 1: functionCounts[1]++; completedIDs.add(floorPlan[i][j].id); break;
+                        case 2: functionCounts[2]++; completedIDs.add(floorPlan[i][j].id); break;
+                        case 3: functionCounts[3]++; completedIDs.add(floorPlan[i][j].id); break;
+                    }
+                }
             }
-            if (x - radius >= 0) {
-                affinity += processStation(floorPlan, x - radius, y, floorPlan[x][y], completedIDsForNeighbors);
-            }
-            if (y + radius < floorPlan[0].length) {
-                affinity += processStation(floorPlan, x, y + radius, floorPlan[x][y], completedIDsForNeighbors);
-            }
-            if (y - radius >= 0) {
-                affinity += processStation(floorPlan, x, y - radius, floorPlan[x][y], completedIDsForNeighbors);
-            }
-            if (x + radius < floorPlan.length && y + radius < floorPlan[0].length) {
-                affinity += processStation(floorPlan, x + radius, y + radius, floorPlan[x][y], completedIDsForNeighbors);
-            }
-            if (x - radius >= 0 && y + radius < floorPlan[0].length) {
-                affinity += processStation(floorPlan, x - radius, y + radius, floorPlan[x][y], completedIDsForNeighbors);
-            }
-            if (x + radius < floorPlan.length && y - radius >= 0) {
-                affinity += processStation(floorPlan, x + radius, y - radius, floorPlan[x][y], completedIDsForNeighbors);
-            }
-            if (x - radius >= 0 && y - radius >= 0) {
-                affinity += processStation(floorPlan, x - radius, y - radius, floorPlan[x][y], completedIDsForNeighbors);
+            completedIDs.clear();
+            return functionCounts;
+        }
+
+        // Situation 2: Radius goes out of bounds
+        int startX = Math.max(x - radius, 0);
+        int endX = Math.min(x + radius, floorPlan.length - 1);
+        int startY = Math.max(y - radius, 0);
+        int endY = Math.min(y + radius, floorPlan[0].length - 1);
+
+        // Iterate through the valid coordinates within bounds
+        for (int i = startX; i <= endX; i++) {
+            for (int j = startY; j <= endY; j++) {
+                if (floorPlan[i][j] == null || completedIDs.contains(floorPlan[i][j].id)) continue;
+                switch (floorPlan[i][j].function) {
+                    case 0: functionCounts[0]++; completedIDs.add(floorPlan[i][j].id); break;
+                    case 1: functionCounts[1]++; completedIDs.add(floorPlan[i][j].id); break;
+                    case 2: functionCounts[2]++; completedIDs.add(floorPlan[i][j].id); break;
+                    case 3: functionCounts[3]++; completedIDs.add(floorPlan[i][j].id); break;
+                }
             }
         }
-        completedIDsForNeighbors.clear();
-        return affinity;
+        completedIDs.clear();
+        return functionCounts;
     }
 
-    private static int processStation(Station[][] floorPlan, int x, int y, Station currentStation, HashSet<Integer> completedIDsForNeighbors) {
-        int zeroCount = 0, oneCount = 0, twoCount = 0, threeCount = 0;
-        try {
-            if (currentStation.id == floorPlan[x][y].id || completedIDsForNeighbors.contains(floorPlan[x][y].id)) {
-                return 0;
-            }
-            switch (floorPlan[x][y].function) {
-                case 0:
-                    zeroCount++;
-                    completedIDsForNeighbors.add(floorPlan[x][y].id);
-                    break;
-                case 1:
-                    oneCount++;
-                    completedIDsForNeighbors.add(floorPlan[x][y].id);
-                    break;
-                case 2:
-                    twoCount++;
-                    completedIDsForNeighbors.add(floorPlan[x][y].id);
-                    break;
-                case 3:
-                    threeCount++;
-                    completedIDsForNeighbors.add(floorPlan[x][y].id);
-                    break;
-            }
-        } catch (NullPointerException ignored) {
-        }
-        return zeroCount + oneCount + twoCount + threeCount;
+    /**
+     * Calculate if the top-left coordinate is within bounds
+     */
+    private static boolean calculateTopLeftCoordinate(int x, int y, int radius) {
+        return (x - radius >= 0 && y - radius >= 0);
     }
 
-}
+    }

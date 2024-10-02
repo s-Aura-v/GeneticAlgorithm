@@ -17,6 +17,7 @@ import javafx.scene.shape.Rectangle;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -63,6 +64,9 @@ public class GeneticAlgorithmController {
     @FXML
     private Button submitConfigButton;
 
+    @FXML
+    private List<Integer> bestFacilityList;
+
     public void setDetailedGrid(int dimensions, Station[][] floorPlan) {
         detailedGrid = new GridPane(10, 10);
         detailedGrid.getChildren().removeAll();
@@ -83,130 +87,154 @@ public class GeneticAlgorithmController {
                 detailedGrid.setVgap(1);
             }
         }
+
+        fillBestFacilityList();
+    }
+
+    private void fillBestFacilityList() {
+        bestFacilityList.addAll(rebuiltSolutionsPool.keySet());
     }
 
     public void setSubmitConfigButton() {
+//        int NUMBER_OF_ITERATIONS = 10;
+//        submitConfigButton.setOnAction(event -> {
+//            int NUMBER_OF_FACILITIES = Integer.parseInt(numOfFacilityText.getText());
+//            int FACILITY_DIMENSION = Integer.parseInt(facilityDimensionText.getText());
+//            int NUMBER_OF_STATIONS = Integer.parseInt(numOfStationsText.getText());
+//            CountDownLatch latch = new CountDownLatch(NUMBER_OF_FACILITIES);
+//            Station[] listOfPeople = createPersonList(NUMBER_OF_STATIONS);
+//            ArrayList<Facility> listOfFacilities = new ArrayList<>();
+//            for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
+//                listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople, NUMBER_OF_ITERATIONS, latch));
+//            }
+//            for (Facility x : listOfFacilities) {
+//                x.start();
+//            }
+//
+//            try {
+//                latch.await();
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//
+//            // The results of these methods are stored in : RebuiltStationPools
+//            ArrayList<Station[][]> dividedSolutionPools = GeneticAlgorithmTester.divideIntoHalves();
+//            dividedSolutionPools = recreateNewFacilities(dividedSolutionPools);
+//            calculateNewAffinities(dividedSolutionPools);
+//
+//            setDetailedGrid(FACILITY_DIMENSION, listOfFacilities.getFirst().getFloorPlan());
+//            createFacilitiesOverviewGrid();
+//        });
+
         int NUMBER_OF_ITERATIONS = 10;
         submitConfigButton.setOnAction(event -> {
             int NUMBER_OF_FACILITIES = Integer.parseInt(numOfFacilityText.getText());
             int FACILITY_DIMENSION = Integer.parseInt(facilityDimensionText.getText());
             int NUMBER_OF_STATIONS = Integer.parseInt(numOfStationsText.getText());
-            CountDownLatch latch = new CountDownLatch(NUMBER_OF_FACILITIES);
             Station[] listOfPeople = createPersonList(NUMBER_OF_STATIONS);
             ArrayList<Facility> listOfFacilities = new ArrayList<>();
+            CountDownLatch latch = new CountDownLatch(NUMBER_OF_FACILITIES);
+
             for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
                 listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople, NUMBER_OF_ITERATIONS, latch));
             }
             for (Facility x : listOfFacilities) {
                 x.start();
             }
-
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-            // The results of these methods are stored in : RebuiltStationPools
-            ArrayList<Station[][]> dividedSolutionPools = GeneticAlgorithmTester.divideIntoHalves();
-            dividedSolutionPools = recreateNewFacilities(dividedSolutionPools);
-            calculateNewAffinities(dividedSolutionPools);
-
             setDetailedGrid(FACILITY_DIMENSION, listOfFacilities.getFirst().getFloorPlan());
-            createFacilitiesOverviewGrid();
         });
     }
 
     /*
     Runs the Facility and GeneticAlgorithm Class
      */
-    private void start() throws InterruptedException {
-        int NUMBER_OF_ITERATIONS = 10;
-        int NUMBER_OF_FACILITIES = Integer.parseInt(numOfFacilityText.getText());
-        int FACILITY_DIMENSION = Integer.parseInt(facilityDimensionText.getText());
-        int NUMBER_OF_STATIONS = Integer.parseInt(numOfStationsText.getText());
-        CountDownLatch latch = new CountDownLatch(NUMBER_OF_FACILITIES);
-        Station[] listOfPeople = createPersonList(NUMBER_OF_STATIONS);
-        ArrayList<Facility> listOfFacilities = new ArrayList<>();
-        for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
-            listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople, NUMBER_OF_ITERATIONS, latch));
-        }
-        for (Facility x : listOfFacilities) {
-            x.start();
-        }
+//    private void start() {
+//        int NUMBER_OF_ITERATIONS = 10;
+//        int NUMBER_OF_FACILITIES = Integer.parseInt(numOfFacilityText.getText());
+//        int FACILITY_DIMENSION = Integer.parseInt(facilityDimensionText.getText());
+//        int NUMBER_OF_STATIONS = Integer.parseInt(numOfStationsText.getText());
+//        CountDownLatch latch = new CountDownLatch(NUMBER_OF_FACILITIES);
+//        Station[] listOfPeople = createPersonList(NUMBER_OF_STATIONS);
+//        ArrayList<Facility> listOfFacilities = new ArrayList<>();
+//        for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
+//            listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople, NUMBER_OF_ITERATIONS, latch));
+//        }
+//        for (Facility x : listOfFacilities) {
+//            x.start();
+//        }
+//
+//        latch.await();
+//
+//        // The results of these methods are stored in : RebuiltStationPools
+//        ArrayList<Station[][]> dividedSolutionPools = GeneticAlgorithmTester.divideIntoHalves();
+//        dividedSolutionPools = recreateNewFacilities(dividedSolutionPools);
+//        calculateNewAffinities(dividedSolutionPools);
+//    }
 
-        latch.await();
+//    private void createFacilitiesOverviewGrid() {
+//        facilitiesOverviewGrid = new GridPane();
+//        facilitiesOverviewGrid.setAlignment(Pos.TOP_CENTER);
+//        facilitiesOverviewGrid.setHgap(1);
+//        facilitiesOverviewGrid.setVgap(1);
+//        facilitiesOverviewGrid.setGridLinesVisible(true);
+//
+//        final int numCols = 9;
+//        final int numRows = 9;
+//
+//        for (int i = 0; i < numCols; i++) {
+//            ColumnConstraints colConst = new ColumnConstraints();
+//            colConst.setPercentWidth(100.0 / numCols);
+//            facilitiesOverviewGrid.getColumnConstraints().add(colConst);
+//        }
+//        for (int i = 0; i < numRows; i++) {
+//            RowConstraints rowConst = new RowConstraints();
+//            rowConst.setPercentHeight(100.0 / numRows);
+//            facilitiesOverviewGrid.getRowConstraints().add(rowConst);
+//        }
+//
+//        facilitiesOverviewContainer.getChildren().clear();
+//        facilitiesOverviewContainer.getChildren().add(facilitiesOverviewGrid);
+//
+//        for (Station[][] floorPlan : GeneticAlgorithmTester.bestSolutionsPool.values()) {
+//            int dimensions = 9;
+//            for (int i = 0; i < numRows; i++) {
+//                for (int j = 0; j < numCols; j++) {
+//                    facilitiesOverviewGrid.add(createNewCell(dimensions, floorPlan), i, j);
+//                }
+//            }
+//        }
+//    }
 
-        // The results of these methods are stored in : RebuiltStationPools
-        ArrayList<Station[][]> dividedSolutionPools = GeneticAlgorithmTester.divideIntoHalves();
-        dividedSolutionPools = recreateNewFacilities(dividedSolutionPools);
-        calculateNewAffinities(dividedSolutionPools);
-    }
-
-    private void createFacilitiesOverviewGrid() {
-        facilitiesOverviewGrid = new GridPane();
-        facilitiesOverviewGrid.setAlignment(Pos.TOP_CENTER);
-        facilitiesOverviewGrid.setHgap(1);
-        facilitiesOverviewGrid.setVgap(1);
-        facilitiesOverviewGrid.setGridLinesVisible(true);
-
-        final int numCols = 9;
-        final int numRows = 9;
-
-        for (int i = 0; i < numCols; i++) {
-            ColumnConstraints colConst = new ColumnConstraints();
-            colConst.setPercentWidth(100.0 / numCols);
-            facilitiesOverviewGrid.getColumnConstraints().add(colConst);
-        }
-        for (int i = 0; i < numRows; i++) {
-            RowConstraints rowConst = new RowConstraints();
-            rowConst.setPercentHeight(100.0 / numRows);
-            facilitiesOverviewGrid.getRowConstraints().add(rowConst);
-        }
-
-        facilitiesOverviewContainer.getChildren().clear();
-        facilitiesOverviewContainer.getChildren().add(facilitiesOverviewGrid);
-
-        for (Station[][] floorPlan : GeneticAlgorithmTester.bestSolutionsPool.values()) {
-            int dimensions = 9;
-            for (int i = 0; i < numRows; i++) {
-                for (int j = 0; j < numCols; j++) {
-                    facilitiesOverviewGrid.add(createNewCell(dimensions, floorPlan), i, j);
-                }
-            }
-        }
-    }
-
-    public AnchorPane createNewCell(int dimensions, Station[][] floorPlan) {
-        AnchorPane cell = new AnchorPane();
-
-        // Set preferred size for the AnchorPane
-        // TODO: LOOK INTO THIS
-        cell.setPrefSize(50, 50);
-
-        GridPane cellGrid = new GridPane();
-        cellGrid.setAlignment(Pos.TOP_CENTER);
-        cellGrid.setHgap(0);
-        cellGrid.setVgap(0);
-
-        // EDIT THIS LATER...
-        cellGrid.setPrefSize(cell.getPrefWidth(), cell.getPrefHeight());
-
-        double totalHeight = cellGrid.getPrefHeight();
-        double totalWidth = cellGrid.getPrefWidth();
-        double rectangleWidth = (totalWidth / dimensions) - 1;
-        double rectangleHeight = (totalHeight / dimensions) - 1;
-
-        for (int i = 0; i < dimensions; i++) {
-            for (int j = 0; j < dimensions; j++) {
-                Rectangle rect = new Rectangle(rectangleWidth, rectangleHeight);
-                cellGrid.add(rect, i, j);  // Add rectangles to the grid
-            }
-        }
-
-        cell.getChildren().add(cellGrid);
-        return cell;
-    }
+//    public AnchorPane createNewCell(int dimensions, Station[][] floorPlan) {
+//        AnchorPane cell = new AnchorPane();
+//
+//        // Set preferred size for the AnchorPane
+//        // TODO: LOOK INTO THIS
+//        cell.setPrefSize(50, 50);
+//
+//        GridPane cellGrid = new GridPane();
+//        cellGrid.setAlignment(Pos.TOP_CENTER);
+//        cellGrid.setHgap(0);
+//        cellGrid.setVgap(0);
+//
+//        // EDIT THIS LATER...
+//        cellGrid.setPrefSize(cell.getPrefWidth(), cell.getPrefHeight());
+//
+//        double totalHeight = cellGrid.getPrefHeight();
+//        double totalWidth = cellGrid.getPrefWidth();
+//        double rectangleWidth = (totalWidth / dimensions) - 1;
+//        double rectangleHeight = (totalHeight / dimensions) - 1;
+//
+//        for (int i = 0; i < dimensions; i++) {
+//            for (int j = 0; j < dimensions; j++) {
+//                Rectangle rect = new Rectangle(rectangleWidth, rectangleHeight);
+//                cellGrid.add(rect, i, j);  // Add rectangles to the grid
+//            }
+//        }
+//
+//        cell.getChildren().add(cellGrid);
+//        return cell;
+//    }
 
 
     /**
