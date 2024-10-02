@@ -15,10 +15,6 @@ public class GeneticAlgorithm {
         FACILITY_DIMENSION = numOfFacilities;
     }
 
-    public HashMap<Integer, Station[][]> getRebuiltSolutionsPool() {
-        return rebuiltSolutionsPool;
-    }
-
     /**
      * Create new factories based on the best solutions which have been divided into halves.
      * Add left (even index) with right (odd index) factories;
@@ -97,6 +93,7 @@ public class GeneticAlgorithm {
         for (int i = 0; i < stations.size(); i++) {
             rebuiltSolutionsPool.put(calculateAffinity(stations.get(i)), stations.get(i));
         }
+        GlobalSolutionPool.rebuiltSolutionsPool = rebuiltSolutionsPool;
         System.out.println(rebuiltSolutionsPool);
     }
 

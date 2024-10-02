@@ -3,18 +3,26 @@ package com.example.geneticalgorithmfx;
 import com.example.geneticalgorithmfx.Classes.Facility;
 import com.example.geneticalgorithmfx.Classes.GeneticAlgorithm;
 import com.example.geneticalgorithmfx.Classes.Station;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.*;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.example.geneticalgorithmfx.Classes.GeneticAlgorithm.*;
+import static com.example.geneticalgorithmfx.Classes.GlobalSolutionPool.bestSolutionsPool;
+import static com.example.geneticalgorithmfx.Classes.GlobalSolutionPool.rebuiltSolutionsPool;
 
 
 public class GeneticAlgorithmController {
@@ -37,12 +45,6 @@ public class GeneticAlgorithmController {
     private Tab detailedTab;
 
     @FXML
-    private TableView<?> detailedTable;
-
-    @FXML
-    private AnchorPane detailedTableContainer;
-
-    @FXML
     private Tab facilitiesContainer;
 
     @FXML
@@ -58,9 +60,7 @@ public class GeneticAlgorithmController {
     private Button submitConfigButton;
 
     @FXML
-    private ListView<Integer> bestFacilityList;
-
-    // Variables to run the code;
+    ListView<Integer> listOfBestSolutions = new ListView<>();
 
     public void start() {
         submitConfigButton.setOnAction(event -> {
@@ -91,8 +91,69 @@ public class GeneticAlgorithmController {
             dividedSolutionPools = geneticAlgorithm.recreateNewFacilities(dividedSolutionPools);
             geneticAlgorithm.calculateNewAffinities(dividedSolutionPools);
 
+            fillBestFacilityList();
+            listOfBestSolutions.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent mouseEvent) {
+                    fillDetailedGridContainer(facilityDimension, listOfBestSolutions.getSelectionModel().getSelectedItem());
+                }
+            });
         });
+
     }
+
+    private void fillBestFacilityList() {
+        ObservableList<Integer> names = FXCollections.observableArrayList(bestSolutionsPool.keySet());
+        listOfBestSolutions.setItems(names);
+    }
+
+
+    private void fillDetailedGridContainer(int facilityDimension, Integer selectedItem) {
+        detailedGrid = new GridPane(facilityDimension, facilityDimension);
+        detailedGrid.getChildren().removeAll();
+        detailedGridContainer.getChildren().clear();
+        detailedGrid.setAlignment(Pos.TOP_CENTER);
+        detailedGridContainer.getChildren().add(detailedGrid);
+
+        double width = detailedGridContainer.getWidth();
+        double height = detailedGridContainer.getHeight();
+        int rectangleHeight = (int) ((height / facilityDimension) - 1);
+        int rectangleWidth = (int) ((width / facilityDimension) - 1);
+        detailedGrid.setHgap(1);
+        detailedGrid.setVgap(1);
+
+        Station[][] floorPlan = rebuiltSolutionsPool.get(selectedItem);
+        Rectangle blueRectangle = new Rectangle(rectangleWidth, rectangleHeight);
+        blueRectangle.setFill(Color.BLUEVIOLET);
+        Rectangle redRectangle= new Rectangle(rectangleWidth, rectangleHeight);
+        redRectangle.setFill(Color.RED);
+        Rectangle greenRectangle = new Rectangle(rectangleWidth, rectangleHeight);
+        greenRectangle.setFill(Color.GREEN);
+        Rectangle goldRectangle = new Rectangle(rectangleWidth, rectangleHeight);
+        goldRectangle.setFill(Color.GOLD);
+        for (int x = 0; x < facilityDimension; x++) {
+            for (int y = 0; y < facilityDimension; y++) {
+                if (floorPlan[x][y] == null) {
+                    detailedGrid.add(new Rectangle(rectangleWidth, rectangleHeight), x, y);
+                    continue;
+                }
+                switch (floorPlan[x][y].getFunction()) {
+                    case 0: detailedGrid.add(createRectangle(rectangleWidth,rectangleHeight,Color.BLUEVIOLET), x, y); break;
+                    case 1: detailedGrid.add(createRectangle(rectangleWidth,rectangleHeight,Color.RED), x, y); break;
+                    case 2: detailedGrid.add(createRectangle(rectangleWidth,rectangleHeight,Color.GREEN), x, y); break;
+                    case 3: detailedGrid.add(createRectangle(rectangleWidth,rectangleHeight,Color.GOLD), x, y); break;
+                    default: detailedGrid.add(new Rectangle(rectangleWidth, rectangleHeight), x, y); break;
+                }
+            }
+        }
+    }
+
+    private Rectangle createRectangle(int width, int height, Color color) {
+        Rectangle rectangle = new Rectangle(width, height);
+        rectangle.setFill(color);
+        return rectangle;
+    }
+
 
     /**
      * This function creates an array of people, with random functions, so that they may be placed in the facility.

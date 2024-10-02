@@ -17,9 +17,9 @@ public class GeneticAlgorithmGUI extends Application {
         stage.setScene(scene);
         stage.show();
 
+
         GeneticAlgorithmController controller = fxmlLoader.getController();
         controller.start();
-
     }
      
     public static void main(String[] args) {

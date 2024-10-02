@@ -20,6 +20,10 @@ public class Station {
         return id;
     }
 
+    public int getFunction() {
+        return function;
+    }
+
     public boolean contains(Station[][] stations){
         return false;
     }

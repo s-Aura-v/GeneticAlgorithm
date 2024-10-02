@@ -5,8 +5,6 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -22,20 +20,10 @@
                <content>
                   <AnchorPane prefHeight="200.0" prefWidth="200.0">
                      <children>
-                        <AnchorPane fx:id="detailedTableContainer" layoutX="24.0" layoutY="220.0" prefHeight="200.0" prefWidth="196.0" style="-fx-border-color: black;" AnchorPane.bottomAnchor="250.0" AnchorPane.leftAnchor="9.0">
-                           <children>
-                              <TableView fx:id="detailedTable" layoutX="3.0" layoutY="2.0" prefHeight="208.0" prefWidth="192.0" AnchorPane.bottomAnchor="2.0" AnchorPane.leftAnchor="2.0" AnchorPane.rightAnchor="2.0" AnchorPane.topAnchor="0.0">
-                                <columns>
-                                  <TableColumn prefWidth="109.77986812591553" text="Information" />
-                                  <TableColumn prefWidth="81.22015380859375" text="Description" />
-                                </columns>
-                              </TableView>
-                           </children>
-                        </AnchorPane>
                         <AnchorPane fx:id="detailedGridContainer" layoutX="215.0" layoutY="14.0" prefHeight="656.0" prefWidth="1041.0" style="-fx-border-color: black;" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="9.0" />
                         <AnchorPane layoutX="10.0" layoutY="365.0" prefHeight="200.0" prefWidth="194.0" style="-fx-border-color: black;" AnchorPane.bottomAnchor="14.5" AnchorPane.leftAnchor="9.0">
                            <children>
-                              <ListView fx:id="bestFacilityList" layoutX="1.0" layoutY="2.0" prefHeight="290.0" prefWidth="194.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="1.0" AnchorPane.topAnchor="2.0" />
+                              <ListView fx:id="listOfBestSolutions" layoutX="-6.0" layoutY="-14.0" prefHeight="200.0" prefWidth="196.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                            </children>
                         </AnchorPane>
                         <Label layoutX="32.0" layoutY="450.5" text="Facility List" AnchorPane.bottomAnchor="213.0">
