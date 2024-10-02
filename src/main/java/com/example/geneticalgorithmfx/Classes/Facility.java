@@ -5,7 +5,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.example.geneticalgorithmfx.Classes.GeneticAlgorithmTester.bestSolutionsPool;
+import static com.example.geneticalgorithmfx.Classes.GlobalSolutionPool.bestSolutionsPool;
 
 /**
  * Facility is a class that holds a 2d array, representing a floor plan. Each array index represents a location on the floor.

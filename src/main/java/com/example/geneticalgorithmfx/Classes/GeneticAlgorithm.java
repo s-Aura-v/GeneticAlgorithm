@@ -1,40 +1,21 @@
 package com.example.geneticalgorithmfx.Classes;
 
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-public class GeneticAlgorithmTester {
-    public static int NUMBER_OF_FACILITIES = 2;
-    private static int FACILITY_DIMENSION = 9;
-    private static int NUMBER_OF_PEOPLE = 4;
-    private static int NUMBER_OF_ITERATIONS = 15;
-    private static int AFFINITY_RADIUS = 5;
+import static com.example.geneticalgorithmfx.Classes.GlobalSolutionPool.bestSolutionsPool;
+
+public class GeneticAlgorithm {
     //Global Variable that stores the best solutions
-    public static HashMap<Integer, Station[][]> bestSolutionsPool = new HashMap<>();
-    public static HashMap<Integer, Station[][]> rebuiltSolutionsPool = new HashMap<>();
+    public HashMap<Integer, Station[][]> rebuiltSolutionsPool = new HashMap<>();
+    private int FACILITY_DIMENSION;
 
-    public static void main(String[] args) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(NUMBER_OF_FACILITIES);
-        Station[] listOfPeople = createPersonList(NUMBER_OF_PEOPLE);
-        ArrayList<Facility> listOfFacilities = new ArrayList<>();
-        for (int i = 0; i < NUMBER_OF_FACILITIES; i++) {
-            listOfFacilities.add(new Facility(FACILITY_DIMENSION, listOfPeople, NUMBER_OF_ITERATIONS, latch));
-        }
-        for (Facility x : listOfFacilities) {
-            x.start();
-        }
-
-        // wait for all the threads to make their solution pools
-        latch.await();
-
-        ArrayList<Station[][]> dividedSolutionPools = divideIntoHalves();
-        dividedSolutionPools = recreateNewFacilities(dividedSolutionPools);
-        calculateNewAffinities(dividedSolutionPools);
+    public GeneticAlgorithm(int numOfFacilities) {
+        FACILITY_DIMENSION = numOfFacilities;
     }
 
-    public static HashMap<Integer, Station[][]> getRebuiltSolutionsPool() {
+    public HashMap<Integer, Station[][]> getRebuiltSolutionsPool() {
         return rebuiltSolutionsPool;
     }
 
@@ -43,7 +24,7 @@ public class GeneticAlgorithmTester {
      * Add left (even index) with right (odd index) factories;
      * @param dividedSolutionPools
      */
-    public static ArrayList<Station[][]> recreateNewFacilities(ArrayList<Station[][]> dividedSolutionPools) {
+    public ArrayList<Station[][]> recreateNewFacilities(ArrayList<Station[][]> dividedSolutionPools) {
         int midpoint = (FACILITY_DIMENSION / 2);
         int rightHalf = midpoint + 1;
         ArrayList<Station[][]> recreatedSolutionPools = new ArrayList<>();
@@ -89,7 +70,7 @@ public class GeneticAlgorithmTester {
      * All left quadrants are going inside even index and vice versa.
      * @return ArrayList of Stations' Halves
      */
-    public static ArrayList<Station[][]> divideIntoHalves() {
+    public ArrayList<Station[][]> divideIntoHalves() {
         ArrayList<Station[][]> dividedSolutionPools = new ArrayList<>();
         int midpoint = (FACILITY_DIMENSION / 2);
         int rightHalf = midpoint + 1;
@@ -112,7 +93,7 @@ public class GeneticAlgorithmTester {
     /*
 
      */
-    public static void calculateNewAffinities(ArrayList<Station[][]> stations) {
+    public void calculateNewAffinities(ArrayList<Station[][]> stations) {
         for (int i = 0; i < stations.size(); i++) {
             rebuiltSolutionsPool.put(calculateAffinity(stations.get(i)), stations.get(i));
         }
@@ -120,29 +101,11 @@ public class GeneticAlgorithmTester {
     }
 
     /**
-     * This function creates an array of people, with random functions, so that they may be placed in the facility.
-     * There are 4 function types, 0-3, and it is biased so that it produces more numbers of lower value.
-     *
-     * @param numberOfPeople - insert the number of people that you want created
-     * @return Person[] - return an array filled with people of different functions
-     */
-    static Station[] createPersonList(int numberOfPeople) {
-        Station[] people = new Station[numberOfPeople];
-        for (int i = 0; i < numberOfPeople; i++) {
-            double randomDouble = ThreadLocalRandom.current().nextDouble();
-            double biasedRandomDouble = Math.pow(randomDouble, 2);
-            int personFunction = (int) Math.round(biasedRandomDouble * 3);
-            people[i] = new Station(personFunction, i);
-        }
-        return people;
-    }
-
-    /**
      * Calculates total affinity for the entire floor plan
      * @param floorPlan - the 2d array holding the stations
      * @return affinity - the total affinity between the stations in the floor plan
      */
-    private static int calculateAffinity(Station[][] floorPlan) {
+    private int calculateAffinity(Station[][] floorPlan) {
         int affinity = 0;
 
         for (int i = 1; i < FACILITY_DIMENSION - 1; i++) {
@@ -167,7 +130,7 @@ public class GeneticAlgorithmTester {
      * @param y
      * @return
      */
-    private static int[] calculateIndividualAffinity(Station[][] floorPlan, int x, int y) {
+    private int[] calculateIndividualAffinity(Station[][] floorPlan, int x, int y) {
         int radius = 2;
         int[] functionCounts = new int[4];
         HashSet<Integer> completedIDs = new HashSet<>();
@@ -215,7 +178,7 @@ public class GeneticAlgorithmTester {
     /**
      * Calculate if the top-left coordinate is within bounds
      */
-    private static boolean calculateTopLeftCoordinate(int x, int y, int radius) {
+    private boolean calculateTopLeftCoordinate(int x, int y, int radius) {
         return (x - radius >= 0 && y - radius >= 0);
     }
 
