@@ -149,13 +149,11 @@ public class GeneticAlgorithmTester {
             for (int j = 1; j < FACILITY_DIMENSION - 1; j++) {
                 if (floorPlan[i][j] == null) continue;
                 int[] functions = calculateIndividualAffinity(floorPlan, i, j);
-                for (int function : functions) {
-                    switch (function) {
-                        case 0: if (floorPlan[i][j].function == 3) { affinity++; break; }
-                        case 1: if (floorPlan[i][j].function == 2) { affinity++; break; }
-                        case 2: if (floorPlan[i][j].function == 1) { affinity++; break; }
-                        case 3: if (floorPlan[i][j].function == 0) { affinity++; break; }
-                    }
+                switch (floorPlan[i][j].function) {
+                    case 0: affinity += functions[3]; break;
+                    case 1: affinity += functions[2]; break;
+                    case 2: affinity += functions[1]; break;
+                    case 3: affinity += functions[0]; break;
                 }
             }
         }
@@ -178,9 +176,7 @@ public class GeneticAlgorithmTester {
         if (calculateTopLeftCoordinate(x, y, radius)) {
             for (int i = x - radius; i < x + radius; i++) {
                 for (int j = y - radius; j < y + radius; j++) {
-                    // Skip if cell is null or function already counted
                     if (floorPlan[i][j] == null || completedIDs.contains(floorPlan[i][j].id)) continue;
-
                     // Count functions and add to completedIDs
                     switch (floorPlan[i][j].function) {
                         case 0: functionCounts[0]++; completedIDs.add(floorPlan[i][j].id); break;
