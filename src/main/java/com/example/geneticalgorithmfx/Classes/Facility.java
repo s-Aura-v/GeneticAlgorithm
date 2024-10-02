@@ -178,7 +178,7 @@ public class Facility extends Thread {
         return false;
     }
 
-    private synchronized int calculateAffinity(Station[][] floorPlan) {
+    public synchronized int calculateAffinity(Station[][] floorPlan) {
         int affinity = 0;
         HashSet<Integer> completedIDs = new HashSet<>();
 
@@ -193,7 +193,8 @@ public class Facility extends Thread {
         return (affinity);
     }
 
-    /***
+    /**
+     * Helper for calculate affinity
      * @param floorPlan    - the 2d array of stations
      * @param x            - the xValue of the station
      * @param y            - the yValue of the station

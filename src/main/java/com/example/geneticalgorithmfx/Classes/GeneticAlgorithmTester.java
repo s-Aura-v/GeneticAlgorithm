@@ -7,11 +7,13 @@ import java.util.stream.Collectors;
 
 public class GeneticAlgorithmTester {
     public static int NUMBER_OF_FACILITIES = 2;
-    private static int FACILITY_DIMENSION = 9;
-    private static int NUMBER_OF_PEOPLE = 4;
+    private static int FACILITY_DIMENSION = 21;
+    private static int NUMBER_OF_PEOPLE = 62;
     private static int NUMBER_OF_ITERATIONS = 15;
+    private static int AFFINITY_RADIUS = 5;
     //Global Variable that stores the best solutions
     public static HashMap<Integer, Station[][]> bestSolutionsPool = new HashMap<>();
+    public static HashMap<Integer, Station[][]> rebuiltSolutionsPool = new HashMap<>();
 
     public static void main(String[] args) throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(NUMBER_OF_FACILITIES);
@@ -28,8 +30,12 @@ public class GeneticAlgorithmTester {
         latch.await();
 
         ArrayList<Station[][]> dividedSolutionPools = divideIntoHalves();
-        recreateNewFacilities(dividedSolutionPools);
+        dividedSolutionPools = recreateNewFacilities(dividedSolutionPools);
+        calculateNewAffinities(dividedSolutionPools);
+    }
 
+    public static HashMap<Integer, Station[][]> getRebuiltSolutionsPool() {
+        return rebuiltSolutionsPool;
     }
 
     /**
@@ -37,7 +43,7 @@ public class GeneticAlgorithmTester {
      * Add left (even index) with right (odd index) factories;
      * @param dividedSolutionPools
      */
-    private static void recreateNewFacilities(ArrayList<Station[][]> dividedSolutionPools) {
+    public static ArrayList<Station[][]> recreateNewFacilities(ArrayList<Station[][]> dividedSolutionPools) {
         int midpoint = (FACILITY_DIMENSION / 2);
         int rightHalf = midpoint + 1;
         ArrayList<Station[][]> recreatedSolutionPools = new ArrayList<>();
@@ -60,12 +66,13 @@ public class GeneticAlgorithmTester {
                                 }
                             }
                         }
+
                         recreatedSolutionPools.add(mergedFloorPlan);
                     }
                 }
             }
         }
-        System.out.println(recreatedSolutionPools);;
+        return recreatedSolutionPools;
     }
 
     static Set<Integer> flatten(Station[][] arr) throws NullPointerException {
@@ -77,13 +84,12 @@ public class GeneticAlgorithmTester {
                 .collect(Collectors.toSet());
     }
 
-
     /**
      * Divides the solution hashmap into halves so that it can be reassembled to create a new facility
      * All left quadrants are going inside even index and vice versa.
      * @return ArrayList of Stations' Halves
      */
-    private static ArrayList<Station[][]> divideIntoHalves() {
+    public static ArrayList<Station[][]> divideIntoHalves() {
         ArrayList<Station[][]> dividedSolutionPools = new ArrayList<>();
         int midpoint = (FACILITY_DIMENSION / 2);
         int rightHalf = midpoint + 1;
@@ -103,6 +109,16 @@ public class GeneticAlgorithmTester {
         return dividedSolutionPools;
     }
 
+    /*
+
+     */
+    public static void calculateNewAffinities(ArrayList<Station[][]> stations) {
+        for (int i = 0; i < stations.size(); i++) {
+            rebuiltSolutionsPool.put(calculateAffinity(stations.get(i)), stations.get(i));
+        }
+        System.out.println(rebuiltSolutionsPool);
+    }
+
     /**
      * This function creates an array of people, with random functions, so that they may be placed in the facility.
      * There are 4 function types, 0-3, and it is biased so that it produces more numbers of lower value.
@@ -119,6 +135,93 @@ public class GeneticAlgorithmTester {
             people[i] = new Station(personFunction, i);
         }
         return people;
+    }
+
+    private static int calculateAffinity(Station[][] floorPlan) {
+        int affinity = 0;
+        HashSet<Integer> completedIDs = new HashSet<>();
+
+        for (int i = 1; i < FACILITY_DIMENSION - 1; i++) {
+            for (int j = 1; j < FACILITY_DIMENSION - 1; j++) {
+                if (floorPlan[i][j] == null) continue;
+                if (completedIDs.contains(floorPlan[i][j].id)) continue;
+
+                affinity = calculateIndividualAffinity(floorPlan, i, j, completedIDs);
+            }
+        }
+        return (affinity);
+    }
+
+    /**
+     * Helper for calculate affinity
+     * @param floorPlan    - the 2d array of stations
+     * @param x            - the xValue of the station
+     * @param y            - the yValue of the station
+     * @param completedIDs - set to make sure the affinity doesn't count itself multiple times (since they can take multiple spaces).
+     */
+    private static int calculateIndividualAffinity(Station[][] floorPlan, int x, int y, HashSet<Integer> completedIDs) {
+        int affinity = 0;
+        completedIDs.add(floorPlan[x][y].id);
+        HashSet<Integer> completedIDsForNeighbors = new HashSet<>();
+
+        for (int radius = 1; radius < AFFINITY_RADIUS; radius++) {
+            // Check the boundaries and avoid out-of-bounds access
+            if (x + radius < floorPlan.length) {
+                affinity += processStation(floorPlan, x + radius, y, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (x - radius >= 0) {
+                affinity += processStation(floorPlan, x - radius, y, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (y + radius < floorPlan[0].length) {
+                affinity += processStation(floorPlan, x, y + radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (y - radius >= 0) {
+                affinity += processStation(floorPlan, x, y - radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (x + radius < floorPlan.length && y + radius < floorPlan[0].length) {
+                affinity += processStation(floorPlan, x + radius, y + radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (x - radius >= 0 && y + radius < floorPlan[0].length) {
+                affinity += processStation(floorPlan, x - radius, y + radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (x + radius < floorPlan.length && y - radius >= 0) {
+                affinity += processStation(floorPlan, x + radius, y - radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+            if (x - radius >= 0 && y - radius >= 0) {
+                affinity += processStation(floorPlan, x - radius, y - radius, floorPlan[x][y], completedIDsForNeighbors);
+            }
+        }
+        completedIDsForNeighbors.clear();
+        return affinity;
+    }
+
+    private static int processStation(Station[][] floorPlan, int x, int y, Station currentStation, HashSet<Integer> completedIDsForNeighbors) {
+        int zeroCount = 0, oneCount = 0, twoCount = 0, threeCount = 0;
+        try {
+            if (currentStation.id == floorPlan[x][y].id || completedIDsForNeighbors.contains(floorPlan[x][y].id)) {
+                return 0;
+            }
+            switch (floorPlan[x][y].function) {
+                case 0:
+                    zeroCount++;
+                    completedIDsForNeighbors.add(floorPlan[x][y].id);
+                    break;
+                case 1:
+                    oneCount++;
+                    completedIDsForNeighbors.add(floorPlan[x][y].id);
+                    break;
+                case 2:
+                    twoCount++;
+                    completedIDsForNeighbors.add(floorPlan[x][y].id);
+                    break;
+                case 3:
+                    threeCount++;
+                    completedIDsForNeighbors.add(floorPlan[x][y].id);
+                    break;
+            }
+        } catch (NullPointerException ignored) {
+        }
+        return zeroCount + oneCount + twoCount + threeCount;
     }
 
 }
