@@ -1,7 +1,6 @@
 package com.example.geneticalgorithmfx.Classes;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static com.example.geneticalgorithmfx.Classes.GlobalSolutionPool.bestSolutionsPool;
@@ -9,10 +8,15 @@ import static com.example.geneticalgorithmfx.Classes.GlobalSolutionPool.bestSolu
 public class GeneticAlgorithm {
     //Global Variable that stores the best solutions
     public HashMap<Integer, Station[][]> rebuiltSolutionsPool = new HashMap<>();
-    private int FACILITY_DIMENSION;
+    public static int AFFINITY_RADIUS = 2;
+    private final int FACILITY_DIMENSION;
 
     public GeneticAlgorithm(int numOfFacilities) {
-        FACILITY_DIMENSION = numOfFacilities;
+        if (numOfFacilities % 2 == 0) {
+            FACILITY_DIMENSION = numOfFacilities + 1;
+        } else {
+            FACILITY_DIMENSION = numOfFacilities;
+        }
     }
 
     /**

@@ -54,7 +54,13 @@ public class GeneticAlgorithmController {
     private TextField facilityDimensionText;
 
     @FXML
+    private TextField numberOfIterations;
+
+    @FXML
     private TextField numOfStationsText;
+
+    @FXML
+    private TextField affinityRadiusText;
 
     @FXML
     private Button submitConfigButton;
@@ -62,18 +68,24 @@ public class GeneticAlgorithmController {
     @FXML
     ListView<Integer> listOfBestSolutions = new ListView<>();
 
+
     public void start() {
         submitConfigButton.setOnAction(event -> {
             int numOfFacilities = Integer.parseInt(numOfFacilityText.getText());
-            int facilityDimension = Integer.parseInt(facilityDimensionText.getText());
-            int numOfStations = Integer.parseInt(facilityDimensionText.getText());
-            int NUMBER_OF_ITERATIONS = 15;
-            int AFFINITY_RADIUS = 5;
+            int odd = Integer.parseInt(facilityDimensionText.getText());
+            int facilityDimension;
+            if (odd % 2 != 0) {
+                facilityDimension = Integer.parseInt(facilityDimensionText.getText());
+            } else {
+                facilityDimension = Integer.parseInt(facilityDimensionText.getText()) + 1;
+            }
+            int numOfStations = Integer.parseInt(numOfStationsText.getText());
+            int numOfIterations = Integer.parseInt(numberOfIterations.getText());
             Station[] listOfStations = createStations(numOfStations);
             CountDownLatch latch = new CountDownLatch(numOfFacilities);
             ArrayList<Facility> listOfFacilities = new ArrayList<>();
             for (int i = 0; i < numOfFacilities; i++) {
-                listOfFacilities.add(new Facility(facilityDimension, listOfStations, NUMBER_OF_ITERATIONS, latch));
+                listOfFacilities.add(new Facility(facilityDimension, listOfStations, numOfIterations, latch));
             }
             // TODO: move it into the previous for loop [ listOfFacilities.get(i).start(); ]
             for (Facility x : listOfFacilities) {
@@ -98,6 +110,7 @@ public class GeneticAlgorithmController {
                     fillDetailedGridContainer(facilityDimension, listOfBestSolutions.getSelectionModel().getSelectedItem());
                 }
             });
+            fillOverviewGrid(facilityDimension);
         });
 
     }
@@ -115,22 +128,15 @@ public class GeneticAlgorithmController {
         detailedGrid.setAlignment(Pos.TOP_CENTER);
         detailedGridContainer.getChildren().add(detailedGrid);
 
-        double width = detailedGridContainer.getWidth();
-        double height = detailedGridContainer.getHeight();
+        int width = (int) detailedGridContainer.getWidth();
+        int height = (int) detailedGridContainer.getHeight();
         int rectangleHeight = (int) ((height / facilityDimension) - 1);
         int rectangleWidth = (int) ((width / facilityDimension) - 1);
         detailedGrid.setHgap(1);
         detailedGrid.setVgap(1);
 
         Station[][] floorPlan = rebuiltSolutionsPool.get(selectedItem);
-        Rectangle blueRectangle = new Rectangle(rectangleWidth, rectangleHeight);
-        blueRectangle.setFill(Color.BLUEVIOLET);
-        Rectangle redRectangle= new Rectangle(rectangleWidth, rectangleHeight);
-        redRectangle.setFill(Color.RED);
-        Rectangle greenRectangle = new Rectangle(rectangleWidth, rectangleHeight);
-        greenRectangle.setFill(Color.GREEN);
-        Rectangle goldRectangle = new Rectangle(rectangleWidth, rectangleHeight);
-        goldRectangle.setFill(Color.GOLD);
+
         for (int x = 0; x < facilityDimension; x++) {
             for (int y = 0; y < facilityDimension; y++) {
                 if (floorPlan[x][y] == null) {
@@ -153,6 +159,65 @@ public class GeneticAlgorithmController {
         rectangle.setFill(color);
         return rectangle;
     }
+
+    private void fillOverviewGrid(int facilityDimension) {
+        // Calculate the number of rows/columns based on the size of best solutions pool
+        int dimension = (int) Math.ceil(Math.sqrt(bestSolutionsPool.size()));
+
+        facilitiesOverviewGrid = new GridPane();
+        facilitiesOverviewGrid.getChildren().clear();
+        facilitiesOverviewContainer.getChildren().clear();
+        facilitiesOverviewGrid.setAlignment(Pos.TOP_CENTER);
+        facilitiesOverviewContainer.getChildren().add(facilitiesOverviewGrid);
+
+        facilitiesOverviewGrid.setHgap(1);
+        facilitiesOverviewGrid.setVgap(1);
+
+        // Calculate cell dimensions based on grid container size
+        int width = (int) facilitiesOverviewContainer.getWidth();
+        int height = (int) facilitiesOverviewContainer.getHeight();
+        int rectangleHeight = (int) ((height / (dimension * facilityDimension)) - 1);
+        int rectangleWidth = (int) ((width / (dimension * facilityDimension)) - 1);
+
+        int facilityIndex = 0;
+        for (int i = 0; i < dimension; i++) {
+            for (int j = 0; j < dimension; j++) {
+                if (facilityIndex >= bestSolutionsPool.size()) {
+                    // We've added all the facilities, stop filling the grid
+                    break;
+                }
+
+                Integer selectedItem = bestSolutionsPool.keySet().toArray(new Integer[0])[facilityIndex];
+                Station[][] floorPlan = rebuiltSolutionsPool.get(selectedItem);
+
+                GridPane facilityGrid = new GridPane();
+                facilityGrid.setHgap(1);
+                facilityGrid.setVgap(1);
+
+                // Fill individual facility grid
+                for (int x = 0; x < facilityDimension; x++) {
+                    for (int y = 0; y < facilityDimension; y++) {
+                        if (floorPlan[x][y] == null) {
+                            facilityGrid.add(new Rectangle(rectangleWidth, rectangleHeight), x, y);
+                            continue;
+                        }
+                        switch (floorPlan[x][y].getFunction()) {
+                            case 0: facilityGrid.add(createRectangle(rectangleWidth, rectangleHeight, Color.BLUEVIOLET), x, y); break;
+                            case 1: facilityGrid.add(createRectangle(rectangleWidth, rectangleHeight, Color.RED), x, y); break;
+                            case 2: facilityGrid.add(createRectangle(rectangleWidth, rectangleHeight, Color.GREEN), x, y); break;
+                            case 3: facilityGrid.add(createRectangle(rectangleWidth, rectangleHeight, Color.GOLD), x, y); break;
+                            default: facilityGrid.add(new Rectangle(rectangleWidth, rectangleHeight), x, y); break;
+                        }
+                    }
+                }
+
+                // Add the facility grid to the overview grid
+                facilitiesOverviewGrid.add(facilityGrid, i, j);
+                facilityIndex++;
+            }
+        }
+    }
+
 
 
     /**

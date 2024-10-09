@@ -6,6 +6,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.example.geneticalgorithmfx.Classes.GlobalSolutionPool.bestSolutionsPool;
+import static com.example.geneticalgorithmfx.Classes.GlobalSolutionPool.solutionsLock;
 
 /**
  * Facility is a class that holds a 2d array, representing a floor plan. Each array index represents a location on the floor.
@@ -17,15 +18,18 @@ public class Facility extends Thread {
     private final Station[] listOfStation;
     private final ReentrantLock lock = new ReentrantLock();
     private final int NUMBER_OF_ITERATIONS;
-    private final int AFFINITY_RADIUS = 5;
+    private final int AFFINITY_RADIUS = 2;
     //TEST CASES FOR GLOBAL
     CountDownLatch latch;
 
 
     public Facility(int FACILITY_DIMENSION, Station[] listOfStation, int NUMBER_OF_ITERATIONS, CountDownLatch latch) {
         this.floorPlan = new Station[FACILITY_DIMENSION][FACILITY_DIMENSION];
-        this.FACILITY_DIMENSION = FACILITY_DIMENSION;
-        this.listOfStation = listOfStation;
+        if (FACILITY_DIMENSION % 2 == 0) {
+            this.FACILITY_DIMENSION = FACILITY_DIMENSION + 1;
+        } else {
+            this.FACILITY_DIMENSION = FACILITY_DIMENSION;
+        }        this.listOfStation = listOfStation;
         this.NUMBER_OF_ITERATIONS = NUMBER_OF_ITERATIONS;
         this.latch = latch;
     }
@@ -54,10 +58,19 @@ public class Facility extends Thread {
                 index++;
             }
             int affinity = calculateAffinity(floorPlan);
-            System.out.println(affinity);
-            bestSolutionsPool.put(affinity, cloneFloorPlan(floorPlan));
+//            System.out.println(affinity);
+            addToBestSolutionsPool(affinity, cloneFloorPlan(floorPlan));
         } finally {
             lock.unlock();
+        }
+    }
+
+    private static void addToBestSolutionsPool(int affinity, Station[][] clonedFloorPlan) {
+        solutionsLock.lock();
+        try {
+            bestSolutionsPool.put(affinity, clonedFloorPlan);
+        } finally {
+            solutionsLock.unlock();
         }
     }
 
@@ -209,7 +222,7 @@ public class Facility extends Thread {
      * @return
      */
     private synchronized int[] calculateIndividualAffinity(Station[][] floorPlan, int x, int y) {
-        int radius = 2;
+        int radius = AFFINITY_RADIUS;
         int[] functionCounts = new int[4];
         HashSet<Integer> completedIDs = new HashSet<>();
 
@@ -294,8 +307,5 @@ public class Facility extends Thread {
             floorPlan[midpoint][i] = new Station(-1, -1);
         }
     }
-
-
-
 
 }

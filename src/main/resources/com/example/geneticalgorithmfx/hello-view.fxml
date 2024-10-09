@@ -21,17 +21,17 @@
                   <AnchorPane prefHeight="200.0" prefWidth="200.0">
                      <children>
                         <AnchorPane fx:id="detailedGridContainer" layoutX="215.0" layoutY="14.0" prefHeight="656.0" prefWidth="1041.0" style="-fx-border-color: black;" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="9.0" />
-                        <AnchorPane layoutX="10.0" layoutY="365.0" prefHeight="200.0" prefWidth="194.0" style="-fx-border-color: black;" AnchorPane.bottomAnchor="14.5" AnchorPane.leftAnchor="9.0">
+                        <AnchorPane layoutX="10.0" layoutY="365.0" prefHeight="294.0" prefWidth="194.0" style="-fx-border-color: black;" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="9.0">
                            <children>
-                              <ListView fx:id="listOfBestSolutions" layoutX="-6.0" layoutY="-14.0" prefHeight="200.0" prefWidth="196.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                              <ListView fx:id="listOfBestSolutions" layoutX="2.0" layoutY="-90.0" prefHeight="290.0" prefWidth="192.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                            </children>
                         </AnchorPane>
-                        <Label layoutX="32.0" layoutY="450.5" text="Facility List" AnchorPane.bottomAnchor="213.0">
+                        <Label layoutX="11.0" layoutY="331.0" text="Rebuilt Facilities" AnchorPane.bottomAnchor="332.5" AnchorPane.leftAnchor="11.0">
                            <font>
                               <Font name="JetBrains Mono Regular" size="18.0" />
                            </font>
                         </Label>
-                        <AnchorPane layoutX="25.0" layoutY="17.0" prefHeight="200.0" prefWidth="194.0" style="-fx-border-color: black;" AnchorPane.leftAnchor="9.0">
+                        <AnchorPane layoutX="25.0" layoutY="17.0" prefHeight="280.0" prefWidth="200.0" style="-fx-border-color: black;" AnchorPane.leftAnchor="9.0">
                            <children>
                               <Label layoutX="4.0" layoutY="3.0" text="Facility Configurations">
                                  <font>
@@ -41,7 +41,7 @@
                               <TextField fx:id="numOfFacilityText" layoutX="38.0" layoutY="43.0" />
                               <TextField fx:id="facilityDimensionText" layoutX="38.0" layoutY="84.0" />
                               <TextField fx:id="numOfStationsText" layoutX="38.0" layoutY="123.0" />
-                              <Label layoutX="4.0" layoutY="28.0" text="Number of Facilities">
+                              <Label layoutX="4.0" layoutY="28.0" text="# Threads Running Concurrently">
                                  <font>
                                     <Font name="Helvetica" size="13.0" />
                                  </font>
@@ -56,9 +56,20 @@
                                     <Font name="Helvetica" size="13.0" />
                                  </font>
                               </Label>
-                              <Button fx:id="submitConfigButton" layoutX="65.0" layoutY="162.0" mnemonicParsing="false" text="Submit" />
+                              <Button fx:id="submitConfigButton" layoutX="66.0" layoutY="240.0" mnemonicParsing="false" text="Submit" />
+                              <TextField fx:id="numberOfIterations" layoutX="37.0" layoutY="163.0" />
+                              <Label layoutX="3.0" layoutY="149.0" text="Number of Iterations">
+                                 <font>
+                                    <Font name="Helvetica" size="13.0" />
+                                 </font>
+                              </Label>
                            </children>
                         </AnchorPane>
+                        <Label layoutX="16.0" layoutY="359.0" text="Ordered by least affinity to most">
+                           <font>
+                              <Font name="Helvetica" size="13.0" />
+                           </font>
+                        </Label>
                      </children>
                   </AnchorPane>
                </content>
